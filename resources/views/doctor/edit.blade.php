@@ -293,19 +293,7 @@
                            value="{{ old('birth_date', $doctor->birth_date) }}">
                 </div>
 
-                {{-- Speciality --}}
-                <div class="form-group">
-                    <label>Speciality</label>
-                    <input type="text" name="speciality" placeholder="e.g. Cardiologist"
-                           value="{{ old('speciality', $doctor->speciality) }}">
-                </div>
 
-                {{-- Hospital --}}
-                <div class="form-group">
-                    <label>Hospital Name</label>
-                    <input type="text" name="hospital_name" placeholder="e.g. City Hospital"
-                           value="{{ old('hospital_name', $doctor->hospital_name) }}">
-                </div>
 
 
 
@@ -319,11 +307,8 @@
 
                     {{-- Current photo preview --}}
                     <div class="current-photo">
-                        @if($doctor->photo && file_exists(public_path($doctor->photo)))
-                            <img src="/{{ $doctor->photo }}" alt="Current Photo">
-                        @else
-                            <div class="no-photo">{{ strtoupper(substr($doctor->doctor_name, 0, 1)) }}</div>
-                        @endif
+                            <img src="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doctor->photo }}" alt="Current Photo">
+
                         <div class="current-photo-info">
                             <p>Current Photo</p>
                             <span>Upload new photo below to replace it</span>
