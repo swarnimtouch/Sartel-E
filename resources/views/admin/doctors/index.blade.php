@@ -1,0 +1,255 @@
+@extends('layouts.admin')
+@section('title', 'Sartel-E || Doctors')
+@section('page-title', 'Doctors Directory')
+
+@push('styles')
+    <style>
+        /* ── Mobile card view ── */
+        .mobile-doctor-cards { display: none; }
+
+        .doctor-mobile-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            transition: background .15s;
+        }
+
+        .doctor-mobile-card:last-child { border-bottom: none; }
+        .doctor-mobile-card:hover { background: var(--surface2); }
+
+        .doctor-mobile-card img,
+        .doctor-mobile-card .avatar-placeholder {
+            width: 46px; height: 46px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+            border: 2px solid var(--border);
+        }
+
+        .doctor-mobile-card .avatar-placeholder {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 700; color: #fff;
+            border: none;
+        }
+
+        .dmc-info { flex: 1; min-width: 0; }
+
+        .dmc-name {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .dmc-row {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 3px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 14px;
+        }
+
+        .dmc-row span { display: flex; align-items: center; gap: 5px; }
+
+        .dmc-badge {
+            display: inline-block;
+            margin-top: 6px;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 500;
+            background: rgba(59,130,246,.12);
+            color: var(--accent);
+        }
+
+        /* ── Responsive filters ── */
+        @media (max-width: 768px) {
+            .filters-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .search-box { min-width: unset; width: 100%; }
+            .filter-select { width: 100%; }
+
+            .filters-bar .btn { width: 100%; justify-content: center; }
+
+            /* Hide desktop table, show mobile cards */
+            .table-wrap { display: none; }
+            .mobile-doctor-cards { display: block; }
+
+            .pagination-wrap {
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+                text-align: center;
+            }
+
+            .pagination { justify-content: center; }
+        }
+    </style>
+@endpush
+
+@section('content')
+
+    <div class="card">
+
+        {{-- Header --}}
+        <div class="card-header">
+            <div>
+                <div class="card-title">All Doctors</div>
+                <div class="card-sub">{{ $doctors->total() }} Doctors Found</div>
+            </div>
+        </div>
+
+        {{-- Filters --}}
+        <form method="GET" action="{{ route('admin.doctors.index') }}">
+            <div class="filters-bar">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="search"
+                           placeholder="Search by name or speciality..."
+                           value="{{ request('search') }}">
+                </div>
+
+
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter"></i> <span>Filter</span>
+                </button>
+
+                @if(request()->hasAny(['search', 'city', 'speciality']))
+                    <a href="{{ route('admin.doctors.index') }}" class="btn btn-ghost">
+                        <i class="fas fa-times"></i> <span>Reset</span>
+                    </a>
+                @endif
+            </div>
+        </form>
+
+        {{-- ── DESKTOP TABLE ── --}}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Photo</th>
+                    <th>Doctor</th>
+                    <th>Employee Name</th>
+                    <th>Employee Code</th>
+                    <th>Speciality</th>
+                    <th>Hospital</th>
+                    <th>Birth Date</th>
+                    <th>Registered</th>
+                </tr>
+                </thead>
+                <tbody>
+                @forelse($doctors as $doc)
+                    <tr>
+                        <td>{{ $doctors->firstItem() + $loop->index }}</td>
+                        <td>
+                            @if($doc->photo)
+                                <a href="{{ asset($doc->photo) }}" download>
+                                    <img src="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->photo }}"
+                                         width="45" height="45"
+                                         style="border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid var(--border);">
+                                </a>
+                            @else
+                                <div class="avatar-placeholder">
+                                    {{ strtoupper(substr($doc->doctor_name, 0, 1)) }}
+                                </div>
+                            @endif
+                        </td>
+                        <td>
+                            <div class="doctor-name">{{ $doc->doctor_name }}</div>
+                        </td>
+                        <td>{{ $doc->employee->name ?? '-' }}</td>
+                        <td>
+                            <span class="doctor-id">{{ $doc->employee->employee_code ?? '-' }}</span>
+                        </td>
+                        <td>
+                            @if($doc->speciality)
+                                <span class="badge badge-blue">{{ $doc->speciality }}</span>
+                            @else
+                                -
+                            @endif
+                        </td>
+                        <td>{{ $doc->hospital_name ?? '-' }}</td>
+                        <td>{{ $doc->birth_date ?? '-' }}</td>
+                        <td>{{ $doc->created_at->format('d M Y') }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="9">
+                            <div class="empty-state">
+                                <i class="fas fa-user-md"></i>
+                                <p>No doctors found. Please adjust your filters.</p>
+                            </div>
+                        </td>
+                    </tr>
+                @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        {{-- ── MOBILE CARDS ── --}}
+        <div class="mobile-doctor-cards">
+            @forelse($doctors as $doc)
+                <div class="doctor-mobile-card">
+                    @if($doc->photo)
+                        <a href="{{ asset($doc->photo) }}" download>
+                            <img src="{{ asset($doc->photo) }}" alt="{{ $doc->doctor_name }}">
+                        </a>
+                    @else
+                        <div class="avatar-placeholder">
+                            {{ strtoupper(substr($doc->doctor_name, 0, 1)) }}
+                        </div>
+                    @endif
+
+                    <div class="dmc-info">
+                        <div class="dmc-name">{{ $doc->doctor_name }}</div>
+
+                        <div class="dmc-row">
+                            <span><i class="fas fa-user" style="font-size:10px;"></i> {{ $doc->employee->name ?? '-' }}</span>
+                            <span><i class="fas fa-hospital" style="font-size:10px;"></i> {{ $doc->hospital_name ?? '-' }}</span>
+                        </div>
+
+                        <div class="dmc-row">
+                            <span><i class="fas fa-cake-candles" style="font-size:10px;"></i> {{ $doc->birth_date ?? '-' }}</span>
+                            <span><i class="fas fa-calendar" style="font-size:10px;"></i> {{ $doc->created_at->format('d M Y') }}</span>
+                        </div>
+
+                        @if($doc->speciality)
+                            <span class="dmc-badge">{{ $doc->speciality }}</span>
+                        @endif
+                    </div>
+                </div>
+            @empty
+                <div class="empty-state">
+                    <i class="fas fa-user-md"></i>
+                    <p>No doctors found. Please adjust your filters.</p>
+                </div>
+            @endforelse
+        </div>
+
+        {{-- ── PAGINATION ── --}}
+        @if($doctors->hasPages())
+            <div class="pagination-wrap">
+                <div class="pagination-info">
+                    Showing {{ $doctors->firstItem() }}–{{ $doctors->lastItem() }} of {{ $doctors->total() }} doctors
+                </div>
+                <div class="pagination">
+                    {{ $doctors->links() }}
+                </div>
+            </div>
+        @endif
+
+    </div>
+
+@endsection
