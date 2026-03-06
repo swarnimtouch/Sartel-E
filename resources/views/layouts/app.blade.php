@@ -542,7 +542,7 @@
                 </div>
                 <div class="user-info">
                     <div class="user-name">{{ Auth::user()->name }}</div>
-                    <div class="user-role">Employee</div>
+                    <div class="user-role">{{ Auth::user()->designation_name }}</div>
                 </div>
                 <span class="chevron">▼</span>
             </div>
