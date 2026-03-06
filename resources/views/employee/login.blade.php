@@ -334,9 +334,8 @@
     <div class="login-card">
 
         <div class="brand">
-            <img src="{{ asset('uploads/intas-logo.png') }}" style="height:40px; width:auto;">
+            <img src="{{ asset('uploads/intas-logo.png') }}" style="height:80px; width:auto;">
             <h1>Sartel-E</h1>
-            <p>Sign in to your employee account</p>
         </div>
 
         @if(session('error'))
