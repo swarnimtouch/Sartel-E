@@ -288,8 +288,8 @@
         <div class="mobile-cards">
             @forelse($doctors as $doctor)
                 <div class="doctor-card">
-                    @if($doctor->photo && file_exists(public_path($doctor->photo)))
-                        <img src="/{{ $doctor->photo }}" class="doctor-avatar" alt="{{ $doctor->doctor_name }}">
+                    @if($doctor->photo)
+                        <img src="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doctor->photo }}" class="doctor-avatar" alt="{{ $doctor->doctor_name }}">
                     @else
                         <div class="avatar-placeholder">
                             {{ strtoupper(substr($doctor->doctor_name, 0, 1)) }}
