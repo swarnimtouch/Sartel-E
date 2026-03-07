@@ -297,6 +297,7 @@
                     @endif
                     <div class="doctor-card-info">
                         <div class="name">{{ $doctor->doctor_name }}</div>
+                        <div class="name">{{ $doctor->msl_code }}</div>
                         <div class="meta">
                             🏥 {{ $doctor->hospital_name ?? 'N/A' }}
                         </div>

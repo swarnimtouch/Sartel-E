@@ -141,6 +141,7 @@
                     <th>#</th>
                     <th>Photo</th>
                     <th>Doctor</th>
+                    <th>Doctor Msl Code</th>
                     <th>Employee Name</th>
                     <th>Employee Code</th>
                     <th>Speciality</th>
@@ -155,7 +156,7 @@
                         <td>{{ $doctors->firstItem() + $loop->index }}</td>
                         <td>
                             @if($doc->photo)
-                                <a href="{{ asset($doc->photo) }}" download>
+                                <a href="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->photo }}" target="_blank" download>
                                     <img src="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->photo }}"
                                          width="45" height="45"
                                          style="border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid var(--border);">
@@ -168,6 +169,9 @@
                         </td>
                         <td>
                             <div class="doctor-name">{{ $doc->doctor_name }}</div>
+                        </td>
+                        <td>
+                            <div class="doctor-name">{{ $doc->msl_code }}</div>
                         </td>
                         <td>{{ $doc->employee->name ?? '-' }}</td>
                         <td>
@@ -203,8 +207,10 @@
             @forelse($doctors as $doc)
                 <div class="doctor-mobile-card">
                     @if($doc->photo)
-                        <a href="{{ asset($doc->photo) }}" download>
-                            <img src="{{ asset($doc->photo) }}" alt="{{ $doc->doctor_name }}">
+                        <a href="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->photo }}" target="_blank" download>
+                            <img src="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->photo }}"
+                                 width="45" height="45"
+                                 style="border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid var(--border);">
                         </a>
                     @else
                         <div class="avatar-placeholder">
@@ -214,9 +220,11 @@
 
                     <div class="dmc-info">
                         <div class="dmc-name">{{ $doc->doctor_name }}</div>
+                        <div class="dmc-name">{{ $doc->msl_code }}</div>
 
                         <div class="dmc-row">
                             <span><i class="fas fa-user" style="font-size:10px;"></i> {{ $doc->employee->name ?? '-' }}</span>
+                            <span><i class="fas fa-user" style="font-size:10px;"></i> {{ $doc->employee->employee_code ?? '-' }}</span>
                             <span><i class="fas fa-hospital" style="font-size:10px;"></i> {{ $doc->hospital_name ?? '-' }}</span>
                         </div>
 
