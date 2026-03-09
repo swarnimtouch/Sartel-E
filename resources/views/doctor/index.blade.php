@@ -214,6 +214,57 @@
             .pagination-info { width: 100%; text-align: center; }
             .pagination { justify-content: center; width: 100%; }
         }
+        .pagination-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .pagination-info {
+            font-size: .83rem;
+            color: #64748b;
+        }
+
+        .pagination-links {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .page-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px; height: 34px;
+            border-radius: 8px;
+            font-size: .85rem;
+            font-weight: 600;
+            color: #475569;
+            background: #f1f5f9;
+            border: 1.5px solid #e2e8f0;
+            text-decoration: none;
+            transition: all .2s;
+        }
+
+        .page-btn:hover:not(.disabled):not(.active) {
+            background: #e0f2fe;
+            border-color: #38bdf8;
+            color: #0284c7;
+        }
+
+        .page-btn.active {
+            background: linear-gradient(90deg, #38bdf8, #818cf8);
+            border-color: transparent;
+            color: white;
+        }
+
+        .page-btn.disabled {
+            opacity: .4;
+            cursor: not-allowed;
+        }
     </style>
 @endpush
 
@@ -322,8 +373,32 @@
                 <div class="pagination-info">
                     Showing {{ $doctors->firstItem() }}–{{ $doctors->lastItem() }} of {{ $doctors->total() }} doctors
                 </div>
-                <div class="pagination">
-                    {{ $doctors->links() }}
+
+                <div class="pagination-links">
+
+                    {{-- Previous --}}
+                    @if($doctors->onFirstPage())
+                        <span class="page-btn disabled">‹</span>
+                    @else
+                        <a href="{{ $doctors->previousPageUrl() }}" class="page-btn">‹</a>
+                    @endif
+
+                    {{-- Page Numbers --}}
+                    @foreach($doctors->getUrlRange(1, $doctors->lastPage()) as $page => $url)
+                        @if($page == $doctors->currentPage())
+                            <span class="page-btn active">{{ $page }}</span>
+                        @else
+                            <a href="{{ $url }}" class="page-btn">{{ $page }}</a>
+                        @endif
+                    @endforeach
+
+                    {{-- Next --}}
+                    @if($doctors->hasMorePages())
+                        <a href="{{ $doctors->nextPageUrl() }}" class="page-btn">›</a>
+                    @else
+                        <span class="page-btn disabled">›</span>
+                    @endif
+
                 </div>
             </div>
         @endif
