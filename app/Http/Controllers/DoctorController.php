@@ -31,49 +31,63 @@ class DoctorController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'doctor_id' => 'required|exists:doctors,id',
-            'birth_date' => 'required|date',
-            'speciality' => 'required',
-            'hospital_name' => 'required',
-            'cropped_image' => 'required'
+            'doctor_id'      => 'required|exists:doctors,id',
+            'birth_date'     => 'required|date',
+            'speciality'     => 'required',
+            'hospital_name'  => 'required',
+            'cropped_image'  => 'required'
         ]);
 
-        $employee_id = Auth::id();
+        $employee    = Employee::findOrFail(Auth::id());
+        $employee_id = $employee->id;
+
+        // ✅ Employee code use karo (e.g., EMP001)
+        $employee_code = $employee->employee_code ?? 'emp_' . $employee_id;
+
         $doctor = Doctor::findOrFail($request->doctor_id);
 
         $doctorSlug = strtolower(trim($doctor->doctor_name));
         $doctorSlug = preg_replace('/\s+/', '_', $doctorSlug);
         $doctorSlug = preg_replace('/[^a-z0-9_]/', '', $doctorSlug);
 
-        $imageName = $doctorSlug.'_'.time().'.png';
+        $imageName = $doctorSlug . '_' . time() . '.png';
 
-        // Remove base64 prefix
-        $image = preg_replace('/^data:image\/\w+;base64,/', '', $request->cropped_image);
+        // ✅ Base64 properly clean karo
+        $croppedImage = $request->cropped_image;
 
-        // Replace spaces
-        $image = str_replace(' ', '+', $image);
+        // Remove data:image/...;base64, prefix
+        if (str_contains($croppedImage, ';base64,')) {
+            $croppedImage = substr($croppedImage, strpos($croppedImage, ';base64,') + 8);
+        }
 
-        // Decode base64
-        $imageData = base64_decode($image);
+        // Replace spaces with + (URL encoding fix)
+        $croppedImage = str_replace(' ', '+', $croppedImage);
 
-        $s3Path = "employee_{$employee_id}/{$imageName}";
+        // Decode
+        $imageData = base64_decode($croppedImage, true);
+
+        if (!$imageData) {
+            return back()->withErrors(['cropped_image' => 'Image processing failed. Please crop again.']);
+        }
+
+        // ✅ employee_code se folder banao
+        $s3Path = "employee_{$employee_code}/{$imageName}";
 
         Storage::disk('s3')->put($s3Path, $imageData, [
-            'visibility' => 'public',
-            'ContentType' => 'image/png'
+            'visibility'  => 'public',
+            'ContentType' => 'image/png',
         ]);
 
         $doctor->update([
-            'employee_id' => $employee_id,
-            'speciality' => $request->speciality,
+            'employee_id'   => $employee_id,
+            'speciality'    => $request->speciality,
             'hospital_name' => $request->hospital_name,
-            'birth_date' => $request->birth_date,
-            'photo' => $s3Path,   // only path
-
+            'birth_date'    => $request->birth_date,
+            'photo'         => $s3Path,
         ]);
 
         return redirect()->route('doctors.index')
-            ->with('success','Doctor added successfully!');
+            ->with('success', 'Doctor added successfully!');
     }
 
 
@@ -88,7 +102,9 @@ class DoctorController extends Controller
 
     public function update(Request $request, $id)
     {
-        $employee_id = Auth::id();
+        $employee    = Employee::findOrFail(Auth::id());
+        $employee_id = $employee->id;
+        $employee_code = $employee->employee_code ?? 'emp_' . $employee_id;
 
         $doctor = Doctor::where('id', $id)
             ->where('employee_id', $employee_id)
@@ -104,7 +120,7 @@ class DoctorController extends Controller
 
         if ($request->filled('cropped_image')) {
 
-            // Delete old image
+            // Delete old image from S3
             if ($doctor->photo) {
                 Storage::disk('s3')->delete($doctor->photo);
             }
@@ -115,23 +131,28 @@ class DoctorController extends Controller
 
             $imageName = $doctorSlug . '_' . time() . '.png';
 
-            // Remove base64 prefix
-            $image = preg_replace('/^data:image\/\w+;base64,/', '', $request->cropped_image);
+            // ✅ Base64 properly clean karo
+            $croppedImage = $request->cropped_image;
 
-            // Replace spaces
-            $image = str_replace(' ', '+', $image);
+            if (str_contains($croppedImage, ';base64,')) {
+                $croppedImage = substr($croppedImage, strpos($croppedImage, ';base64,') + 8);
+            }
 
-            // Decode base64
-            $imageData = base64_decode($image);
+            $croppedImage = str_replace(' ', '+', $croppedImage);
+            $imageData    = base64_decode($croppedImage, true);
 
-            $s3Path = "employee_{$employee_id}/{$imageName}";
+            if (!$imageData) {
+                return back()->withErrors(['cropped_image' => 'Image processing failed. Please crop again.']);
+            }
+
+            // ✅ Abhi employee_id use ho raha hai, baad mein employee_code se replace kar lena
+            $s3Path = "employee_{$employee_code}/{$imageName}";
 
             Storage::disk('s3')->put($s3Path, $imageData, [
-                'visibility' => 'public',
-                'ContentType' => 'image/png'
+                'visibility'  => 'public',
+                'ContentType' => 'image/png',
             ]);
 
-            // Save only path
             $data['photo'] = $s3Path;
         }
 

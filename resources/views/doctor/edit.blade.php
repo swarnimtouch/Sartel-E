@@ -294,8 +294,19 @@
                 </div>
 
 
+                <div class="form-group">
+                    <label>Speciality</label>
+                    <input type="text" name="speciality" id="speciality"
+                           placeholder="e.g. Cardiologist"
+                           value="{{ old('birth_date', $doctor->speciality) }}">
+                </div>
 
-
+                <div class="form-group">
+                    <label>Hospital Name</label>
+                    <input type="text" name="hospital_name" id="hospital_name"
+                           placeholder="e.g. Cardiologist"
+                           value="{{ old('birth_date', $doctor->hospital_name) }}">
+                </div>
 
                 {{-- Photo --}}
                 <div class="form-group full">
@@ -307,7 +318,7 @@
 
                     {{-- Current photo preview --}}
                     <div class="current-photo">
-                            <img src="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doctor->photo }}" alt="Current Photo">
+                        <img src="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doctor->photo }}" alt="Current Photo">
 
                         <div class="current-photo-info">
                             <p>Current Photo</p>
