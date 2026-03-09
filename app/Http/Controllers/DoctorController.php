@@ -155,7 +155,7 @@ class DoctorController extends Controller
 
     public function doctorsByEmployee(Request $request)
     {
-        $doctors = Doctor::whereNull('speciality')
+        $doctors = Doctor::whereNull('speciality')->where('employee_id', Auth::id())
             ->get(['id', 'doctor_name', 'msl_code']);
 
         return response()->json($doctors);

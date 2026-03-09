@@ -21,12 +21,12 @@ class EmployeeLoginController extends Controller
         $employee = Employee::where('employee_code',$request->employee_code)->first();
 
         if(!$employee){
-            return back()->with('error','Invalid Employee Code');
+            return back()->with('error','Invalid Employee Code or Password');
         }
 
         // password = employee_code
-        if($request->password != $employee->employee_code){
-            return back()->with('error','Wrong Password');
+        if($request->password != $employee->employee_code || $employee->designation_name != 'BE'){
+            return back()->with('error','Invalid Employee Code or Password');
         }
 
         // LOGIN USER

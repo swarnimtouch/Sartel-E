@@ -408,7 +408,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Speciality *</label>
+                    <label>Speciality *<br>(as per the doctor’s visiting card)</label>
                     <input type="text" name="speciality" id="speciality"
                            placeholder="e.g. Cardiologist"
                            value="{{ old('speciality') }}">
@@ -416,7 +416,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Hospital Name *</label>
+                    <label>Hospital Name *<br>(as per the doctor’s visiting card)</label>
                     <input type="text" name="hospital_name" id="hospital_name"
                            placeholder="e.g. City Hospital"
                            value="{{ old('hospital_name') }}">
