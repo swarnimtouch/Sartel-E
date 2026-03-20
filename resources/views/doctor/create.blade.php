@@ -6,8 +6,6 @@
 
 @push('styles')
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.css">
-    {{-- Select2 CSS loaded but fully overridden below --}}
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
     <style>
         .form-card { max-width: 700px; }
 
@@ -33,24 +31,31 @@
             letter-spacing: .05em;
         }
 
+        /* ── Shared input style ── */
         .form-group input {
             padding: 11px 14px;
             border: 1.5px solid #e2e8f0;
             border-radius: 10px;
-            font-size: 16px;
+            font-size: 15px;
             font-family: inherit;
             color: #0f172a;
-            transition: border .2s;
+            transition: border-color .2s, box-shadow .2s;
             outline: none;
             background: #f8fafc;
-            appearance: none;
-            -webkit-appearance: none;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .form-group input:focus {
             border-color: #38bdf8;
             background-color: #fff;
-            background-image: none;
+            box-shadow: 0 0 0 3px rgba(56,189,248,.12);
+        }
+
+        .form-group input[readonly] {
+            background: #f1f5f9;
+            color: #94a3b8;
+            cursor: not-allowed;
         }
 
         .form-group input.error {
@@ -58,181 +63,66 @@
             background-color: #fff1f2;
         }
 
-        /* ════════════════════════════════════
-           SELECT2 — fully custom override
-           ════════════════════════════════════ */
+        /* ── Custom Select Wrapper ── */
+        .custom-select-wrap {
+            position: relative;
+            width: 100%;
+        }
 
-        /* Outer container — match form-group input dimensions */
-        .select2-container { width: 100% !important; }
-
-        .select2-container--default .select2-selection--single {
-            height: 46px;                      /* same height as inputs */
-            padding: 0 40px 0 14px;
+        .custom-select-wrap select {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 11px 44px 11px 14px;
             border: 1.5px solid #e2e8f0;
             border-radius: 10px;
-            background: #f8fafc;
-            display: flex;
-            align-items: center;
-            transition: border-color .2s, box-shadow .2s;
-            outline: none;
-        }
-
-        /* The rendered text */
-        .select2-container--default .select2-selection--single .select2-selection__rendered {
-            color: #0f172a;
-            font-size: 16px;
-            font-family: inherit;
-            line-height: 1;
-            padding: 0;
-            position: static;
-        }
-
-        /* Placeholder text */
-        .select2-container--default .select2-selection--single .select2-selection__placeholder {
-            color: #94a3b8;
             font-size: 15px;
+            font-family: inherit;
+            color: #0f172a;
+            background: #f8fafc;
+            appearance: none;
+            -webkit-appearance: none;
+            outline: none;
+            cursor: pointer;
+            transition: border-color .2s, box-shadow .2s;
         }
 
-        /* Custom chevron arrow */
-        .select2-container--default .select2-selection--single .select2-selection__arrow {
-            position: absolute;
-            right: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            height: auto;
-            width: auto;
-        }
-
-        .select2-container--default .select2-selection--single .select2-selection__arrow b {
-            border-color: #94a3b8 transparent transparent;
-            border-width: 5px 4px 0;
-            transition: border-color .2s;
-        }
-
-        /* Open state arrow flip */
-        .select2-container--default.select2-container--open
-        .select2-selection--single .select2-selection__arrow b {
-            border-color: transparent transparent #38bdf8;
-            border-width: 0 4px 5px;
-        }
-
-        /* Clear button */
-        .select2-container--default .select2-selection--single .select2-selection__clear {
-            margin-right: 20px;
-            color: #94a3b8;
-            font-size: 16px;
-            font-weight: 400;
-            line-height: 1;
-        }
-
-        .select2-container--default .select2-selection--single .select2-selection__clear:hover {
-            color: #f43f5e;
-        }
-
-        /* Focus state */
-        .select2-container--default.select2-container--focus .select2-selection--single {
+        .custom-select-wrap select:focus {
             border-color: #38bdf8;
             background-color: #fff;
             box-shadow: 0 0 0 3px rgba(56,189,248,.12);
         }
 
-        /* Open state */
-        .select2-container--default.select2-container--open .select2-selection--single {
-            border-color: #38bdf8;
-            background-color: #fff;
-            border-bottom-left-radius: 0;
-            border-bottom-right-radius: 0;
+        .custom-select-wrap select.error {
+            border-color: #f43f5e;
+            background-color: #fff1f2;
         }
 
-        /* Error state */
-        .select2-error.select2-container--default .select2-selection--single {
-            border-color: #f43f5e !important;
-            background-color: #fff1f2 !important;
-            box-shadow: none !important;
-        }
-
-        /* Disabled state */
-        .select2-container--disabled .select2-selection--single {
-            cursor: not-allowed !important;
+        .custom-select-wrap select:disabled {
             opacity: .55;
+            cursor: not-allowed;
         }
 
-        /* ── Dropdown panel ── */
-        .select2-dropdown {
-            border: 1.5px solid #38bdf8;
-            border-top: none;
-            border-radius: 0 0 10px 10px;
-            box-shadow: 0 8px 24px rgba(0,0,0,.1);
-            background: #fff;
-            overflow: hidden;
+        /* Custom chevron */
+        .custom-select-wrap::after {
+            content: '';
+            pointer-events: none;
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 6px solid #94a3b8;
+            transition: border-top-color .2s;
         }
 
-        /* Search field inside dropdown */
-        .select2-container--default .select2-search--dropdown {
-            padding: 10px 12px;
-            background: #f8fafc;
-            border-bottom: 1px solid #e2e8f0;
+        .custom-select-wrap:focus-within::after {
+            border-top-color: #38bdf8;
         }
 
-        .select2-container--default .select2-search--dropdown .select2-search__field {
-            width: 100%;
-            padding: 8px 12px 8px 34px;
-            border: 1.5px solid #e2e8f0;
-            border-radius: 8px;
-            font-family: inherit;
-            font-size: 14px;
-            color: #0f172a;
-            background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat 10px center;
-            outline: none;
-            transition: border-color .2s, box-shadow .2s;
-        }
-
-        .select2-container--default .select2-search--dropdown .select2-search__field:focus {
-            border-color: #38bdf8;
-            box-shadow: 0 0 0 3px rgba(56,189,248,.1);
-        }
-
-        /* Results list */
-        .select2-results__options {
-            max-height: 220px;
-            overflow-y: auto;
-            padding: 4px 0;
-        }
-
-        .select2-container--default .select2-results__option {
-            padding: 10px 14px;
-            font-size: 14px;
-            font-family: inherit;
-            color: #334155;
-            transition: background .12s;
-        }
-
-        /* Highlighted (keyboard/hover) */
-        .select2-container--default
-        .select2-results__option--highlighted.select2-results__option--selectable {
-            background: #f0f9ff;
-            color: #0284c7;
-        }
-
-        /* Already selected */
-        .select2-container--default
-        .select2-results__option--selected {
-            background: #e0f2fe;
-            color: #0369a1;
-            font-weight: 600;
-        }
-
-        /* No results / loading messages */
-        .select2-container--default .select2-results__option.select2-results__message {
-            color: #94a3b8;
-            font-style: italic;
-            font-size: 13px;
-            text-align: center;
-            padding: 16px;
-        }
-
-        /* ════════════════════════════════════ */
-
+        /* ── Error messages ── */
         .err-msg {
             font-size: .78rem;
             color: #f43f5e;
@@ -388,10 +278,11 @@
                 {{-- Select Doctor --}}
                 <div class="form-group full">
                     <label>Select Doctor *</label>
-                    {{-- select2 will render here; keep it hidden until AJAX done --}}
-                    <select id="doctor_id" name="doctor_id">
-                        <option value="">Loading doctors...</option>
-                    </select>
+                    <div class="custom-select-wrap">
+                        <select id="doctor_id" name="doctor_id">
+                            <option value="">Loading doctors...</option>
+                        </select>
+                    </div>
                     <span class="select-empty-msg" id="no_doctors_msg">✅ All doctors have already been assigned.</span>
                     <span class="err-msg" id="err_doctor">Please select a doctor.</span>
                 </div>
@@ -408,7 +299,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Speciality *<br>(as per the doctor’s visiting card)</label>
+                    <label>Speciality *<br>(as per the doctor's visiting card)</label>
                     <input type="text" name="speciality" id="speciality"
                            placeholder="e.g. Cardiologist"
                            value="{{ old('speciality') }}">
@@ -416,7 +307,28 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Hospital Name *<br>(as per the doctor’s visiting card)</label>
+                    <label>Select Language *</label>
+                    <div class="custom-select-wrap">
+                        <select name="language" id="language" style="margin-top: 17px;">
+                        <option value="">-- Select Language --</option>
+                            <option value="Hindi"     {{ old('language') == 'Hindi'     ? 'selected' : '' }}>Hindi</option>
+                            <option value="Bengali"   {{ old('language') == 'Bengali'   ? 'selected' : '' }}>Bengali</option>
+                            <option value="Gujarati"  {{ old('language') == 'Gujarati'  ? 'selected' : '' }}>Gujarati</option>
+                            <option value="Marathi"   {{ old('language') == 'Marathi'   ? 'selected' : '' }}>Marathi</option>
+                            <option value="Telugu"    {{ old('language') == 'Telugu'    ? 'selected' : '' }}>Telugu</option>
+                            <option value="Tamil"     {{ old('language') == 'Tamil'     ? 'selected' : '' }}>Tamil</option>
+                            <option value="Odia"      {{ old('language') == 'Odia'      ? 'selected' : '' }}>Odia</option>
+                            <option value="Punjabi"   {{ old('language') == 'Punjabi'   ? 'selected' : '' }}>Punjabi</option>
+                            <option value="Assamese"  {{ old('language') == 'Assamese'  ? 'selected' : '' }}>Assamese</option>
+                            <option value="Kannada"   {{ old('language') == 'Kannada'   ? 'selected' : '' }}>Kannada</option>
+                            <option value="Malayalam" {{ old('language') == 'Malayalam' ? 'selected' : '' }}>Malayalam</option>
+                        </select>
+                    </div>
+                    <span class="err-msg" id="err_language">Language is required.</span>
+                </div>
+
+                <div class="form-group">
+                    <label>Hospital Name *<br>(as per the doctor's visiting card)</label>
                     <input type="text" name="hospital_name" id="hospital_name"
                            placeholder="e.g. City Hospital"
                            value="{{ old('hospital_name') }}">
@@ -456,7 +368,6 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.js"></script>
     <script>
         var crop         = null;
@@ -464,73 +375,47 @@
 
         $(document).ready(function () {
 
-            // ── Init Select2 first (shows loading state nicely) ──
-            $('#doctor_id').select2({
-                placeholder:  'Search doctor by name...',
-                allowClear:   true,
-                width:        '100%',
-                language: {
-                    noResults:  function () { return 'No doctor found'; },
-                    searching:  function () { return 'Searching...'; }
-                }
-            });
-
             // ── Load unassigned doctors via AJAX ──
             $.ajax({
                 url:  "{{ route('api.doctors_by_employee') }}",
                 type: "GET",
                 success: function (res) {
                     var $select = $('#doctor_id');
-
-                    // Destroy & reinit to cleanly reset options
-                    $select.select2('destroy');
-                    $select.empty().append('<option value=""></option>');
+                    $select.empty().append('<option value="">-- Select Doctor --</option>');
 
                     if (res.length === 0) {
                         $('#no_doctors_msg').show();
                         $('#submitBtn').prop('disabled', true);
+                        $select.prop('disabled', true);
                     } else {
                         $('#no_doctors_msg').hide();
                         res.forEach(function (doctor) {
-                            var $opt = $('<option>', {
-                                value:       doctor.id,
-                                text:        doctor.doctor_name,
-                                'data-msl':  doctor.msl_number ?? ''
-                            });
-                            $select.append($opt);
+                            $select.append(
+                                $('<option>', {
+                                    value:      doctor.id,
+                                    text:       doctor.doctor_name,
+                                    'data-msl': doctor.msl_number ?? ''
+                                })
+                            );
                         });
                     }
-
-                    // Re-init Select2 after options loaded
-                    $select.select2({
-                        placeholder:  'Search doctor by name...',
-                        allowClear:   true,
-                        width:        '100%',
-                        disabled:     res.length === 0,
-                        language: {
-                            noResults:  function () { return 'No doctor found'; },
-                            searching:  function () { return 'Searching...'; }
-                        }
-                    });
                 },
                 error: function () {
-                    var $select = $('#doctor_id');
-                    $select.select2('destroy');
-                    $select.empty().append('<option value="">Failed to load doctors</option>');
-                    $select.select2({ placeholder: 'Failed to load', width: '100%', disabled: true });
+                    $('#doctor_id')
+                        .empty()
+                        .append('<option value="">Failed to load doctors</option>')
+                        .prop('disabled', true);
                 }
             });
 
         });
 
-        // ── Auto-fill MSL ──
-        $(document).on('change', '#doctor_id', function () {
+        // ── Auto-fill MSL on doctor change ──
+        $('#doctor_id').on('change', function () {
             var doctorId = $(this).val();
 
-            // Clear error
             if (doctorId) {
-                $('#doctor_id').nextAll('.select2-container').first()
-                    .removeClass('select2-error');
+                $(this).removeClass('error');
                 $('#err_doctor').hide();
             }
 
@@ -549,7 +434,24 @@
             }
         });
 
-        // ── Croppie — responsive ──
+        // ── Live clear errors ──
+        $('#language').on('change', function () {
+            if ($(this).val()) { $(this).removeClass('error'); $('#err_language').hide(); }
+        });
+
+        $('#birth_date').on('change', function () {
+            if ($(this).val()) { $(this).removeClass('error'); $('#err_birth').hide(); }
+        });
+
+        $('#speciality').on('input', function () {
+            if ($(this).val().trim()) { $(this).removeClass('error'); $('#err_speciality').hide(); }
+        });
+
+        $('#hospital_name').on('input', function () {
+            if ($(this).val().trim()) { $(this).removeClass('error'); $('#err_hospital').hide(); }
+        });
+
+        // ── Croppie ──
         $('#upload').on('change', function () {
             var file = this.files[0];
             if (!file) return;
@@ -594,43 +496,46 @@
             photoCropped = false;
         });
 
-        // ── Live clear errors ──
-        $('#birth_date').on('change',   function () { if ($(this).val())       { $(this).removeClass('error'); $('#err_birth').hide(); } });
-        $('#speciality').on('input',    function () { if ($(this).val().trim()) { $(this).removeClass('error'); $('#err_speciality').hide(); } });
-        $('#hospital_name').on('input', function () { if ($(this).val().trim()) { $(this).removeClass('error'); $('#err_hospital').hide(); } });
-
         // ── Submit validation ──
         $('#doctorForm').on('submit', function (e) {
             var valid = true;
 
+            // Doctor
             if (!$('#doctor_id').val()) {
-                // Apply error to the Select2 rendered container
-                $('#doctor_id').next('.select2-container').addClass('select2-error');
-                $('#err_doctor').show();
-                valid = false;
+                $('#doctor_id').addClass('error'); $('#err_doctor').show(); valid = false;
             } else {
-                $('#doctor_id').next('.select2-container').removeClass('select2-error');
-                $('#err_doctor').hide();
+                $('#doctor_id').removeClass('error'); $('#err_doctor').hide();
             }
 
+            // Birth date
             if (!$('#birth_date').val()) {
                 $('#birth_date').addClass('error'); $('#err_birth').show(); valid = false;
             } else {
                 $('#birth_date').removeClass('error'); $('#err_birth').hide();
             }
 
+            // Speciality
             if (!$('#speciality').val().trim()) {
                 $('#speciality').addClass('error'); $('#err_speciality').show(); valid = false;
             } else {
                 $('#speciality').removeClass('error'); $('#err_speciality').hide();
             }
 
+            // Hospital
             if (!$('#hospital_name').val().trim()) {
                 $('#hospital_name').addClass('error'); $('#err_hospital').show(); valid = false;
             } else {
                 $('#hospital_name').removeClass('error'); $('#err_hospital').hide();
             }
 
+            // Language
+            if (!$('#language').val()) {
+                $('#language').addClass('error'); $('#err_language').show(); valid = false;
+            } else {
+                $('#language').removeClass('error'); $('#err_language').hide();
+            }
+
+            // Photo
             if (!photoCropped || !$('#cropped_image').val()) {
                 $('#err_photo').show(); valid = false;
             } else {

@@ -194,6 +194,7 @@
                     <th>Photo</th>
                     <th>Doctor</th>
                     <th>Doctor Msl Code</th>
+                    <th>Language</th>
                     <th>Employee Name</th>
                     <th>Employee Code</th>
                     <th>Speciality</th>
@@ -224,6 +225,9 @@
                         </td>
                         <td>
                             <div class="doctor-name">{{ $doc->msl_code }}</div>
+                        </td>
+                        <td>
+                            <div class="doctor-name">{{ $doc->language }}</div>
                         </td>
                         <td>{{ $doc->employee->name ?? '-' }}</td>
                         <td>
@@ -273,6 +277,7 @@
                     <div class="dmc-info">
                         <div class="dmc-name">{{ $doc->doctor_name }}</div>
                         <div class="dmc-name">{{ $doc->msl_code }}</div>
+                        <div class="dmc-name">{{ $doc->language }}</div>
 
                         <div class="dmc-row">
                             <span><i class="fas fa-user" style="font-size:10px;"></i> {{ $doc->employee->name ?? '-' }}</span>

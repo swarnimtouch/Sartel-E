@@ -14,7 +14,8 @@ class Doctor extends Model
         'hospital_name',
         'speciality',
         'msl_code',
-        'birth_date'
+        'birth_date',
+        'language',
     ];
     public function employee()
     {

@@ -289,6 +289,7 @@
                     <th>#</th>
                     <th>Photo</th>
                     <th>Name</th>
+                    <th>Language</th>
                     <th>MSL Code</th>
                     <th>Speciality</th>
                     <th>Hospital</th>
@@ -307,6 +308,7 @@
                             @endif
                         </td>
                         <td class="doctor-name">{{ $doctor->doctor_name }}</td>
+                        <td class="text-muted">{{ $doctor->language ?? '-' }}</td>
                         <td class="text-muted">{{ $doctor->msl_code ?? '-' }}</td>
                         <td class="text-muted">{{ $doctor->speciality ?? '-' }}</td>
                         <td class="text-muted">{{ $doctor->hospital_name ?? '-' }}</td>
@@ -349,6 +351,7 @@
                     <div class="doctor-card-info">
                         <div class="name">{{ $doctor->doctor_name }}</div>
                         <div class="name">{{ $doctor->msl_code }}</div>
+                        <div class="name">{{ $doctor->language }}</div>
                         <div class="meta">
                             🏥 {{ $doctor->hospital_name ?? 'N/A' }}
                         </div>

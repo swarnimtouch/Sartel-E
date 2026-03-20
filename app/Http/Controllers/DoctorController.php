@@ -34,6 +34,7 @@ class DoctorController extends Controller
             'doctor_id'      => 'required|exists:doctors,id',
             'birth_date'     => 'required|date',
             'speciality'     => 'required',
+            'language'       => 'required',
             'hospital_name'  => 'required',
             'cropped_image'  => 'required'
         ]);
@@ -41,7 +42,6 @@ class DoctorController extends Controller
         $employee    = Employee::findOrFail(Auth::id());
         $employee_id = $employee->id;
 
-        // ✅ Employee code use karo (e.g., EMP001)
         $employee_code = $employee->employee_code ?? 'emp_' . $employee_id;
 
         $doctor = Doctor::findOrFail($request->doctor_id);
@@ -52,25 +52,20 @@ class DoctorController extends Controller
 
         $imageName = $doctorSlug . '_' . time() . '.png';
 
-        // ✅ Base64 properly clean karo
         $croppedImage = $request->cropped_image;
 
-        // Remove data:image/...;base64, prefix
         if (str_contains($croppedImage, ';base64,')) {
             $croppedImage = substr($croppedImage, strpos($croppedImage, ';base64,') + 8);
         }
 
-        // Replace spaces with + (URL encoding fix)
         $croppedImage = str_replace(' ', '+', $croppedImage);
 
-        // Decode
         $imageData = base64_decode($croppedImage, true);
 
         if (!$imageData) {
             return back()->withErrors(['cropped_image' => 'Image processing failed. Please crop again.']);
         }
 
-        // ✅ employee_code se folder banao
         $s3Path = "employee_{$employee_code}/{$imageName}";
 
         Storage::disk('s3')->put($s3Path, $imageData, [
@@ -83,6 +78,7 @@ class DoctorController extends Controller
             'speciality'    => $request->speciality,
             'hospital_name' => $request->hospital_name,
             'birth_date'    => $request->birth_date,
+            'language'      =>$request->language,
             'photo'         => $s3Path,
         ]);
 
