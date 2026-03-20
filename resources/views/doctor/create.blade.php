@@ -6,6 +6,7 @@
 
 @push('styles')
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.css">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
     <style>
         .form-card { max-width: 700px; }
 
@@ -63,7 +64,166 @@
             background-color: #fff1f2;
         }
 
-        /* ── Custom Select Wrapper ── */
+        /* ════════════════════════════════════
+           SELECT2 — only for #doctor_id
+           ════════════════════════════════════ */
+        .select2-container { width: 100% !important; }
+
+        .select2-container--default .select2-selection--single {
+            height: 46px;
+            padding: 0 40px 0 14px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            background: #f8fafc;
+            display: flex;
+            align-items: center;
+            transition: border-color .2s, box-shadow .2s;
+            outline: none;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #0f172a;
+            font-size: 15px;
+            font-family: inherit;
+            line-height: 1;
+            padding: 0;
+            position: static;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__placeholder {
+            color: #94a3b8;
+            font-size: 15px;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            height: auto;
+            width: auto;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow b {
+            border-color: #94a3b8 transparent transparent;
+            border-width: 5px 4px 0;
+            transition: border-color .2s;
+        }
+
+        .select2-container--default.select2-container--open
+        .select2-selection--single .select2-selection__arrow b {
+            border-color: transparent transparent #38bdf8;
+            border-width: 0 4px 5px;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__clear {
+            margin-right: 20px;
+            color: #94a3b8;
+            font-size: 16px;
+            font-weight: 400;
+            line-height: 1;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__clear:hover {
+            color: #f43f5e;
+        }
+
+        .select2-container--default.select2-container--focus .select2-selection--single {
+            border-color: #38bdf8;
+            background-color: #fff;
+            box-shadow: 0 0 0 3px rgba(56,189,248,.12);
+        }
+
+        .select2-container--default.select2-container--open .select2-selection--single {
+            border-color: #38bdf8;
+            background-color: #fff;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        /* Error state for Select2 */
+        .select2-error.select2-container--default .select2-selection--single {
+            border-color: #f43f5e !important;
+            background-color: #fff1f2 !important;
+            box-shadow: none !important;
+        }
+
+        .select2-container--disabled .select2-selection--single {
+            cursor: not-allowed !important;
+            opacity: .55;
+        }
+
+        /* Dropdown panel */
+        .select2-dropdown {
+            border: 1.5px solid #38bdf8;
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,.1);
+            background: #fff;
+            overflow: hidden;
+        }
+
+        .select2-container--default .select2-search--dropdown {
+            padding: 10px 12px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .select2-container--default .select2-search--dropdown .select2-search__field {
+            width: 100%;
+            padding: 8px 12px 8px 34px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            color: #0f172a;
+            background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat 10px center;
+            outline: none;
+            transition: border-color .2s, box-shadow .2s;
+        }
+
+        .select2-container--default .select2-search--dropdown .select2-search__field:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 3px rgba(56,189,248,.1);
+        }
+
+        .select2-results__options {
+            max-height: 220px;
+            overflow-y: auto;
+            padding: 4px 0;
+        }
+
+        .select2-container--default .select2-results__option {
+            padding: 10px 14px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #334155;
+            transition: background .12s;
+        }
+
+        .select2-container--default
+        .select2-results__option--highlighted.select2-results__option--selectable {
+            background: #f0f9ff;
+            color: #0284c7;
+        }
+
+        .select2-container--default .select2-results__option--selected {
+            background: #e0f2fe;
+            color: #0369a1;
+            font-weight: 600;
+        }
+
+        .select2-container--default .select2-results__option.select2-results__message {
+            color: #94a3b8;
+            font-style: italic;
+            font-size: 13px;
+            text-align: center;
+            padding: 16px;
+        }
+
+        /* ════════════════════════════════════
+           NATIVE Custom Select — for #language
+           ════════════════════════════════════ */
         .custom-select-wrap {
             position: relative;
             width: 100%;
@@ -102,7 +262,7 @@
             cursor: not-allowed;
         }
 
-        /* Custom chevron */
+        /* Custom chevron arrow */
         .custom-select-wrap::after {
             content: '';
             pointer-events: none;
@@ -275,14 +435,13 @@
 
             <div class="form-grid">
 
-                {{-- Select Doctor --}}
+                {{-- Select Doctor — Select2 ──────────────── --}}
                 <div class="form-group full">
                     <label>Select Doctor *</label>
-                    <div class="custom-select-wrap">
-                        <select id="doctor_id" name="doctor_id">
-                            <option value="">Loading doctors...</option>
-                        </select>
-                    </div>
+                    {{-- No wrapper div needed — Select2 handles its own container --}}
+                    <select id="doctor_id" name="doctor_id">
+                        <option value="">Loading doctors...</option>
+                    </select>
                     <span class="select-empty-msg" id="no_doctors_msg">✅ All doctors have already been assigned.</span>
                     <span class="err-msg" id="err_doctor">Please select a doctor.</span>
                 </div>
@@ -306,11 +465,12 @@
                     <span class="err-msg" id="err_speciality">Speciality is required.</span>
                 </div>
 
+                {{-- Language — native custom select ─────── --}}
                 <div class="form-group">
                     <label>Select Language *</label>
                     <div class="custom-select-wrap">
-                        <select name="language" id="language" style="margin-top: 17px;">
-                        <option value="">-- Select Language --</option>
+                        <select name="language" id="language">
+                            <option value="">-- Select Language --</option>
                             <option value="Hindi"     {{ old('language') == 'Hindi'     ? 'selected' : '' }}>Hindi</option>
                             <option value="Bengali"   {{ old('language') == 'Bengali'   ? 'selected' : '' }}>Bengali</option>
                             <option value="Gujarati"  {{ old('language') == 'Gujarati'  ? 'selected' : '' }}>Gujarati</option>
@@ -368,6 +528,7 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.js"></script>
     <script>
         var crop         = null;
@@ -375,18 +536,31 @@
 
         $(document).ready(function () {
 
+            // ── Init Select2 on Doctor only ──
+            $('#doctor_id').select2({
+                placeholder: 'Search doctor by name...',
+                allowClear:  true,
+                width:       '100%',
+                language: {
+                    noResults: function () { return 'No doctor found'; },
+                    searching: function () { return 'Searching...'; }
+                }
+            });
+
             // ── Load unassigned doctors via AJAX ──
             $.ajax({
                 url:  "{{ route('api.doctors_by_employee') }}",
                 type: "GET",
                 success: function (res) {
                     var $select = $('#doctor_id');
-                    $select.empty().append('<option value="">-- Select Doctor --</option>');
+
+                    // Destroy → repopulate → reinit cleanly
+                    $select.select2('destroy');
+                    $select.empty().append('<option value=""></option>');
 
                     if (res.length === 0) {
                         $('#no_doctors_msg').show();
                         $('#submitBtn').prop('disabled', true);
-                        $select.prop('disabled', true);
                     } else {
                         $('#no_doctors_msg').hide();
                         res.forEach(function (doctor) {
@@ -399,23 +573,34 @@
                             );
                         });
                     }
+
+                    $select.select2({
+                        placeholder: 'Search doctor by name...',
+                        allowClear:  true,
+                        width:       '100%',
+                        disabled:    res.length === 0,
+                        language: {
+                            noResults: function () { return 'No doctor found'; },
+                            searching: function () { return 'Searching...'; }
+                        }
+                    });
                 },
                 error: function () {
-                    $('#doctor_id')
-                        .empty()
-                        .append('<option value="">Failed to load doctors</option>')
-                        .prop('disabled', true);
+                    var $select = $('#doctor_id');
+                    $select.select2('destroy');
+                    $select.empty().append('<option value="">Failed to load doctors</option>');
+                    $select.select2({ placeholder: 'Failed to load', width: '100%', disabled: true });
                 }
             });
 
         });
 
         // ── Auto-fill MSL on doctor change ──
-        $('#doctor_id').on('change', function () {
+        $(document).on('change', '#doctor_id', function () {
             var doctorId = $(this).val();
 
             if (doctorId) {
-                $(this).removeClass('error');
+                $(this).next('.select2-container').removeClass('select2-error');
                 $('#err_doctor').hide();
             }
 
@@ -500,11 +685,14 @@
         $('#doctorForm').on('submit', function (e) {
             var valid = true;
 
-            // Doctor
+            // Doctor — Select2 container pe error class
             if (!$('#doctor_id').val()) {
-                $('#doctor_id').addClass('error'); $('#err_doctor').show(); valid = false;
+                $('#doctor_id').next('.select2-container').addClass('select2-error');
+                $('#err_doctor').show();
+                valid = false;
             } else {
-                $('#doctor_id').removeClass('error'); $('#err_doctor').hide();
+                $('#doctor_id').next('.select2-container').removeClass('select2-error');
+                $('#err_doctor').hide();
             }
 
             // Birth date
@@ -528,7 +716,7 @@
                 $('#hospital_name').removeClass('error'); $('#err_hospital').hide();
             }
 
-            // Language
+            // Language — native select pe seedha error class
             if (!$('#language').val()) {
                 $('#language').addClass('error'); $('#err_language').show(); valid = false;
             } else {
