@@ -365,6 +365,7 @@
                     <div class="custom-select-wrap">
                         <select name="language" id="language" style="margin-top: 17px;">
                             <option value="">-- Select Language --</option>
+                            <option value="English"     {{ old('language', $doctor->language) == 'English'     ? 'selected' : '' }}>English</option>
                             <option value="Hindi"     {{ old('language', $doctor->language) == 'Hindi'     ? 'selected' : '' }}>Hindi</option>
                             <option value="Bengali"   {{ old('language', $doctor->language) == 'Bengali'   ? 'selected' : '' }}>Bengali</option>
                             <option value="Gujarati"  {{ old('language', $doctor->language) == 'Gujarati'  ? 'selected' : '' }}>Gujarati</option>

@@ -112,6 +112,7 @@ class DoctorController extends Controller
             'birth_date'    => $request->birth_date,
             'city'          => $request->city,
             'mobile'        => $request->mobile,
+            'language'        => $request->language,
         ];
 
         if ($request->filled('cropped_image')) {

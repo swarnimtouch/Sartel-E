@@ -471,6 +471,7 @@
                     <div class="custom-select-wrap">
                         <select name="language" id="language">
                             <option value="">-- Select Language --</option>
+                            <option value="English"     {{ old('language') == 'English'     ? 'selected' : '' }}>English</option>
                             <option value="Hindi"     {{ old('language') == 'Hindi'     ? 'selected' : '' }}>Hindi</option>
                             <option value="Bengali"   {{ old('language') == 'Bengali'   ? 'selected' : '' }}>Bengali</option>
                             <option value="Gujarati"  {{ old('language') == 'Gujarati'  ? 'selected' : '' }}>Gujarati</option>
