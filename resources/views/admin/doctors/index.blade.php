@@ -242,7 +242,7 @@
                         </td>
                         <td>{{ $doc->hospital_name ?? '-' }}</td>
                         <td>{{ $doc->birth_date ?? '-' }}</td>
-                        <td>{{ $doc->created_at->format('d M Y') }}</td>
+                        <td>{{ optional($doc->created_at)->format('d M Y') ?? '-' }}</td>
                     </tr>
                 @empty
                     <tr>
@@ -287,7 +287,7 @@
 
                         <div class="dmc-row">
                             <span><i class="fas fa-cake-candles" style="font-size:10px;"></i> {{ $doc->birth_date ?? '-' }}</span>
-                            <span><i class="fas fa-calendar" style="font-size:10px;"></i> {{ $doc->created_at->format('d M Y') }}</span>
+                            <span><i class="fas fa-calendar" style="font-size:10px;"></i> {{ optional($doc->created_at)->format('d M Y') ?? '-' }}</span>
                         </div>
 
                         @if($doc->speciality)
