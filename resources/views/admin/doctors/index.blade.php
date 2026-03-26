@@ -146,6 +146,24 @@
             opacity: .35;
             cursor: not-allowed;
         }
+
+        /* ── Export button ── */
+        .btn-success {
+            background: #16a34a;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: .875rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background .2s;
+        }
+        .btn-success:hover { background: #15803d; color: #fff; }
     </style>
 @endpush
 
@@ -159,6 +177,13 @@
                 <div class="card-title">All Doctors</div>
                 <div class="card-sub">{{ $doctors->total() }} Doctors Found</div>
             </div>
+
+            {{-- ── EXPORT BUTTON (top-right) ── --}}
+            <a href="{{ route('admin.doctors.export') }}?{{ http_build_query(request()->only(['search'])) }}"
+               class="btn btn-success">
+                <i class="fas fa-file-excel"></i>
+                <span>Export Excel</span>
+            </a>
         </div>
 
         {{-- Filters --}}
@@ -170,8 +195,6 @@
                            placeholder="Search by name or speciality..."
                            value="{{ request('search') }}">
                 </div>
-
-
 
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-filter"></i> <span>Filter</span>

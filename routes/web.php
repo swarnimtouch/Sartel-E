@@ -36,4 +36,6 @@ Route::post('/doctor-import', [AuthController::class, 'importDoctors']);
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
     Route::get('/doctors', [AdminController::class, 'index'])->name('doctors.index');
+    Route::get('/doctors/export', [AdminController::class, 'export'])->name('doctors.export');
+
 });
