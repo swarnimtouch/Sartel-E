@@ -223,7 +223,7 @@
                     <th>Speciality</th>
                     <th>Hospital</th>
                     <th>Birth Date</th>
-                    <th>Registered</th>
+                    <th>Updated</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -265,7 +265,7 @@
                         </td>
                         <td>{{ $doc->hospital_name ?? '-' }}</td>
                         <td>{{ $doc->birth_date ?? '-' }}</td>
-                        <td>{{ optional($doc->created_at)->format('d M Y') ?? '-' }}</td>
+                        <td>{{ optional($doc->updated_at)->format('d M Y') ?? '-' }}</td>
                     </tr>
                 @empty
                     <tr>

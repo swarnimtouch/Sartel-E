@@ -85,7 +85,7 @@ class AdminController extends Controller
                 'Speciality',
                 'Hospital Name',
                 'Birth Date',
-                'Registered Date',
+                'Updated Date',
                 'Photo URL',
             ]);
 
@@ -105,7 +105,7 @@ class AdminController extends Controller
                     $doc->speciality              ?? '',
                     $doc->hospital_name           ?? '',
                     $doc->birth_date              ?? '',
-                    optional($doc->created_at)->format('d M YYYY') ?? '',
+                    optional($doc->updated_at)->format('d M Y') ?? '',
                     $photoUrl,
                 ]);
             }
