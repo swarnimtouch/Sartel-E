@@ -361,6 +361,16 @@
                         @if($doctor->speciality)
                             <span class="badge">{{ $doctor->speciality }}</span>
                         @endif
+                        <div style="margin-top:8px;">
+                            <a href="{{ route('doctors.edit', $doctor->id) }}"
+                               style="display:inline-flex;align-items:center;gap:5px;
+              padding:5px 12px;border-radius:8px;font-size:.75rem;
+              font-weight:600;text-decoration:none;
+              background:#f0f9ff;color:#0284c7;border:1.5px solid #bae6fd;">
+                                ✏️ Edit
+                            </a>
+                        </div>
+
                     </div>
                 </div>
             @empty
