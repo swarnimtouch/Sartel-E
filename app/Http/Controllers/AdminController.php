@@ -36,7 +36,7 @@ class AdminController extends Controller
             $query->where('speciality', $request->speciality);
         }
 
-        $doctors = $query->latest()->paginate(10)->withQueryString();
+        $doctors = $query->latest()->paginate(100)->withQueryString();
 
         $specialities = Doctor::whereNotNull('speciality')
             ->distinct()
