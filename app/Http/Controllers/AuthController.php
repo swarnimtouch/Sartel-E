@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Imports\DoctorImport;
 use Maatwebsite\Excel\Facades\Excel;
+
 class AuthController extends Controller
 {
     public function showLogin()
@@ -17,7 +18,7 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email'    => 'required|email',
+            'email' => 'required|email',
             'password' => 'required',
         ]);
 
@@ -44,9 +45,15 @@ class AuthController extends Controller
 
     public function importDoctors(Request $request)
     {
-        Excel::import(new DoctorImport, $request->file('file'));
+        $import = new DoctorImport;
 
-        return back()->with('success', 'Doctors Imported Successfully');
+        Excel::import($import, $request->file('file'));
+
+        $inserted = $import->getInsertedCount();
+        $updated = $import->getUpdatedCount();
+
+        return back()->with('success', "Import Complete: {$inserted} inserted, {$updated} updated.");
     }
+
 
 }

@@ -31,15 +31,15 @@ class DoctorController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'doctor_id'      => 'required|exists:doctors,id',
-            'birth_date'     => 'required|date',
-            'speciality'     => 'required',
-            'language'       => 'required',
-            'hospital_name'  => 'required',
-            'cropped_image'  => 'required'
+            'doctor_id' => 'required|exists:doctors,id',
+            'birth_date' => 'required|date',
+            'speciality' => 'required',
+            'language' => 'required',
+            'hospital_name' => 'required',
+            'cropped_image' => 'required'
         ]);
 
-        $employee    = Employee::findOrFail(Auth::id());
+        $employee = Employee::findOrFail(Auth::id());
         $employee_id = $employee->id;
 
         $employee_code = $employee->employee_code ?? 'emp_' . $employee_id;
@@ -69,17 +69,17 @@ class DoctorController extends Controller
         $s3Path = "employee_{$employee_code}/{$imageName}";
 
         Storage::disk('s3')->put($s3Path, $imageData, [
-            'visibility'  => 'public',
+            'visibility' => 'public',
             'ContentType' => 'image/png',
         ]);
 
         $doctor->update([
-            'employee_id'   => $employee_id,
-            'speciality'    => $request->speciality,
+            'employee_id' => $employee_id,
+            'speciality' => $request->speciality,
             'hospital_name' => $request->hospital_name,
-            'birth_date'    => $request->birth_date,
-            'language'      =>$request->language,
-            'photo'         => $s3Path,
+            'birth_date' => $request->birth_date,
+            'language' => $request->language,
+            'photo' => $s3Path,
         ]);
 
         return redirect()->route('doctors.index')
@@ -98,7 +98,7 @@ class DoctorController extends Controller
 
     public function update(Request $request, $id)
     {
-        $employee    = Employee::findOrFail(Auth::id());
+        $employee = Employee::findOrFail(Auth::id());
         $employee_id = $employee->id;
         $employee_code = $employee->employee_code ?? 'emp_' . $employee_id;
 
@@ -107,12 +107,13 @@ class DoctorController extends Controller
             ->firstOrFail();
 
         $data = [
-            'speciality'    => $request->speciality,
+            'doctor_name' => $request->doctor_name,
+            'speciality' => $request->speciality,
             'hospital_name' => $request->hospital_name,
-            'birth_date'    => $request->birth_date,
-            'city'          => $request->city,
-            'mobile'        => $request->mobile,
-            'language'        => $request->language,
+            'birth_date' => $request->birth_date,
+            'city' => $request->city,
+            'mobile' => $request->mobile,
+            'language' => $request->language,
         ];
 
         if ($request->filled('cropped_image')) {
@@ -136,7 +137,7 @@ class DoctorController extends Controller
             }
 
             $croppedImage = str_replace(' ', '+', $croppedImage);
-            $imageData    = base64_decode($croppedImage, true);
+            $imageData = base64_decode($croppedImage, true);
 
             if (!$imageData) {
                 return back()->withErrors(['cropped_image' => 'Image processing failed. Please crop again.']);
@@ -146,7 +147,7 @@ class DoctorController extends Controller
             $s3Path = "employee_{$employee_code}/{$imageName}";
 
             Storage::disk('s3')->put($s3Path, $imageData, [
-                'visibility'  => 'public',
+                'visibility' => 'public',
                 'ContentType' => 'image/png',
             ]);
 

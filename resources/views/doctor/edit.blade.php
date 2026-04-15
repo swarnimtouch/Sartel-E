@@ -7,7 +7,9 @@
 @push('styles')
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.css">
     <style>
-        .form-card { max-width: 700px; }
+        .form-card {
+            max-width: 700px;
+        }
 
         .form-grid {
             display: grid;
@@ -21,7 +23,9 @@
             gap: 6px;
         }
 
-        .form-group.full { grid-column: 1 / -1; }
+        .form-group.full {
+            grid-column: 1 / -1;
+        }
 
         .form-group label {
             font-size: .82rem;
@@ -49,7 +53,7 @@
         .form-group input:focus {
             border-color: #38bdf8;
             background-color: #fff;
-            box-shadow: 0 0 0 3px rgba(56,189,248,.12);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, .12);
         }
 
         .form-group input[readonly] {
@@ -90,7 +94,7 @@
         .custom-select-wrap select:focus {
             border-color: #38bdf8;
             background-color: #fff;
-            box-shadow: 0 0 0 3px rgba(56,189,248,.12);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, .12);
         }
 
         .custom-select-wrap select.error {
@@ -202,7 +206,9 @@
             transition: border .2s;
         }
 
-        .photo-area:hover { border-color: #38bdf8; }
+        .photo-area:hover {
+            border-color: #38bdf8;
+        }
 
         .upload-label {
             display: inline-block;
@@ -228,7 +234,11 @@
             text-align: center;
         }
 
-        #crop { width: 300px; height: 300px; margin: 0 auto; }
+        #crop {
+            width: 300px;
+            height: 300px;
+            margin: 0 auto;
+        }
 
         #crop-btn {
             display: inline-block;
@@ -255,7 +265,8 @@
         }
 
         #preview-wrap img {
-            width: 90px; height: 90px;
+            width: 90px;
+            height: 90px;
             border-radius: 50%;
             object-fit: cover;
             border: 3px solid #38bdf8;
@@ -295,7 +306,9 @@
             touch-action: manipulation;
         }
 
-        .submit-btn:hover { opacity: .9; }
+        .submit-btn:hover {
+            opacity: .9;
+        }
 
         .cancel-link {
             color: #64748b;
@@ -306,13 +319,37 @@
 
         /* ── MOBILE ── */
         @media (max-width: 600px) {
-            .form-grid { grid-template-columns: 1fr; }
-            .form-group.full { grid-column: 1; }
-            #crop { width: 260px; height: 260px; }
-            .photo-area { padding: 18px 14px; }
-            .submit-btn { width: 100%; text-align: center; }
-            .form-actions { flex-direction: column; gap: 10px; }
-            .cancel-link { width: 100%; text-align: center; }
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-group.full {
+                grid-column: 1;
+            }
+
+            #crop {
+                width: 260px;
+                height: 260px;
+            }
+
+            .photo-area {
+                padding: 18px 14px;
+            }
+
+            .submit-btn {
+                width: 100%;
+                text-align: center;
+            }
+
+            .form-actions {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .cancel-link {
+                width: 100%;
+                text-align: center;
+            }
         }
     </style>
 @endpush
@@ -330,9 +367,9 @@
 
                 {{-- Doctor Name — READ ONLY --}}
                 <div class="form-group full">
-                    <label>Doctor Name <span class="readonly-badge">Read Only</span></label>
+                    <label>Doctor Name </label>
                     <input type="text" name="doctor_name" id="doctor_name"
-                           value="{{ $doctor->doctor_name }}" readonly>
+                           value="{{ $doctor->doctor_name }}">
                 </div>
 
                 {{-- MSL Code — READ ONLY --}}
@@ -365,18 +402,54 @@
                     <div class="custom-select-wrap">
                         <select name="language" id="language" style="margin-top: 17px;">
                             <option value="">-- Select Language --</option>
-                            <option value="English"     {{ old('language', $doctor->language) == 'English'     ? 'selected' : '' }}>English</option>
-                            <option value="Hindi"     {{ old('language', $doctor->language) == 'Hindi'     ? 'selected' : '' }}>Hindi</option>
-                            <option value="Bengali"   {{ old('language', $doctor->language) == 'Bengali'   ? 'selected' : '' }}>Bengali</option>
-                            <option value="Gujarati"  {{ old('language', $doctor->language) == 'Gujarati'  ? 'selected' : '' }}>Gujarati</option>
-                            <option value="Marathi"   {{ old('language', $doctor->language) == 'Marathi'   ? 'selected' : '' }}>Marathi</option>
-                            <option value="Telugu"    {{ old('language', $doctor->language) == 'Telugu'    ? 'selected' : '' }}>Telugu</option>
-                            <option value="Tamil"     {{ old('language', $doctor->language) == 'Tamil'     ? 'selected' : '' }}>Tamil</option>
-                            <option value="Odia"      {{ old('language', $doctor->language) == 'Odia'      ? 'selected' : '' }}>Odia</option>
-                            <option value="Punjabi"   {{ old('language', $doctor->language) == 'Punjabi'   ? 'selected' : '' }}>Punjabi</option>
-                            <option value="Assamese"  {{ old('language', $doctor->language) == 'Assamese'  ? 'selected' : '' }}>Assamese</option>
-                            <option value="Kannada"   {{ old('language', $doctor->language) == 'Kannada'   ? 'selected' : '' }}>Kannada</option>
-                            <option value="Malayalam" {{ old('language', $doctor->language) == 'Malayalam' ? 'selected' : '' }}>Malayalam</option>
+                            <option
+                                value="English" {{ old('language', $doctor->language) == 'English'     ? 'selected' : '' }}>
+                                English
+                            </option>
+                            <option
+                                value="Hindi" {{ old('language', $doctor->language) == 'Hindi'     ? 'selected' : '' }}>
+                                Hindi
+                            </option>
+                            <option
+                                value="Bengali" {{ old('language', $doctor->language) == 'Bengali'   ? 'selected' : '' }}>
+                                Bengali
+                            </option>
+                            <option
+                                value="Gujarati" {{ old('language', $doctor->language) == 'Gujarati'  ? 'selected' : '' }}>
+                                Gujarati
+                            </option>
+                            <option
+                                value="Marathi" {{ old('language', $doctor->language) == 'Marathi'   ? 'selected' : '' }}>
+                                Marathi
+                            </option>
+                            <option
+                                value="Telugu" {{ old('language', $doctor->language) == 'Telugu'    ? 'selected' : '' }}>
+                                Telugu
+                            </option>
+                            <option
+                                value="Tamil" {{ old('language', $doctor->language) == 'Tamil'     ? 'selected' : '' }}>
+                                Tamil
+                            </option>
+                            <option
+                                value="Odia" {{ old('language', $doctor->language) == 'Odia'      ? 'selected' : '' }}>
+                                Odia
+                            </option>
+                            <option
+                                value="Punjabi" {{ old('language', $doctor->language) == 'Punjabi'   ? 'selected' : '' }}>
+                                Punjabi
+                            </option>
+                            <option
+                                value="Assamese" {{ old('language', $doctor->language) == 'Assamese'  ? 'selected' : '' }}>
+                                Assamese
+                            </option>
+                            <option
+                                value="Kannada" {{ old('language', $doctor->language) == 'Kannada'   ? 'selected' : '' }}>
+                                Kannada
+                            </option>
+                            <option
+                                value="Malayalam" {{ old('language', $doctor->language) == 'Malayalam' ? 'selected' : '' }}>
+                                Malayalam
+                            </option>
                         </select>
                     </div>
                     <span class="err-msg" id="err_language">Language is required.</span>
@@ -394,7 +467,8 @@
                 {{-- Photo --}}
                 <div class="form-group full">
                     <label>Doctor Photo
-                        <span style="color:#94a3b8;text-transform:none;letter-spacing:0;font-weight:400;font-size:.8rem;">
+                        <span
+                            style="color:#94a3b8;text-transform:none;letter-spacing:0;font-weight:400;font-size:.8rem;">
                             (optional — change only if needed)
                         </span>
                     </label>
@@ -402,7 +476,8 @@
                     {{-- Current photo --}}
                     <div class="current-photo">
                         @if($doctor->photo)
-                            <img src="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doctor->photo }}" alt="Current Photo">
+                            <img src="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doctor->photo }}"
+                                 alt="Current Photo">
                         @else
                             <div class="no-photo">{{ strtoupper(substr($doctor->doctor_name, 0, 1)) }}</div>
                         @endif
@@ -458,15 +533,18 @@
                 $('#preview-wrap').hide().css('display', 'none');
                 $('#crop-container').show();
 
-                if (crop) { crop.croppie('destroy'); crop = null; }
+                if (crop) {
+                    crop.croppie('destroy');
+                    crop = null;
+                }
 
                 var isMobile = window.innerWidth <= 600;
                 crop = $('#crop').croppie({
-                    viewport: { width: isMobile ? 180 : 200, height: isMobile ? 180 : 200, type: 'circle' },
-                    boundary: { width: isMobile ? 260 : 300, height: isMobile ? 260 : 300 }
+                    viewport: {width: isMobile ? 180 : 200, height: isMobile ? 180 : 200, type: 'circle'},
+                    boundary: {width: isMobile ? 260 : 300, height: isMobile ? 260 : 300}
                 });
 
-                crop.croppie('bind', { url: e.target.result });
+                crop.croppie('bind', {url: e.target.result});
             };
             reader.readAsDataURL(file);
         });
@@ -490,19 +568,31 @@
 
         // ── Live clear errors ──
         $('#speciality').on('input', function () {
-            if ($(this).val().trim()) { $(this).removeClass('error'); $('#err_speciality').hide(); }
+            if ($(this).val().trim()) {
+                $(this).removeClass('error');
+                $('#err_speciality').hide();
+            }
         });
 
         $('#hospital_name').on('input', function () {
-            if ($(this).val().trim()) { $(this).removeClass('error'); $('#err_hospital').hide(); }
+            if ($(this).val().trim()) {
+                $(this).removeClass('error');
+                $('#err_hospital').hide();
+            }
         });
 
         $('#language').on('change', function () {
-            if ($(this).val()) { $(this).removeClass('error'); $('#err_language').hide(); }
+            if ($(this).val()) {
+                $(this).removeClass('error');
+                $('#err_language').hide();
+            }
         });
 
         $('#birth_date').on('change', function () {
-            if ($(this).val()) { $(this).removeClass('error'); $('#err_birth').hide(); }
+            if ($(this).val()) {
+                $(this).removeClass('error');
+                $('#err_birth').hide();
+            }
         });
 
         // ── Submit validation ──
@@ -511,33 +601,48 @@
 
             // Speciality
             if (!$('#speciality').val().trim()) {
-                $('#speciality').addClass('error'); $('#err_speciality').show(); valid = false;
+                $('#speciality').addClass('error');
+                $('#err_speciality').show();
+                valid = false;
             } else {
-                $('#speciality').removeClass('error'); $('#err_speciality').hide();
+                $('#speciality').removeClass('error');
+                $('#err_speciality').hide();
             }
 
             // Hospital
             if (!$('#hospital_name').val().trim()) {
-                $('#hospital_name').addClass('error'); $('#err_hospital').show(); valid = false;
+                $('#hospital_name').addClass('error');
+                $('#err_hospital').show();
+                valid = false;
             } else {
-                $('#hospital_name').removeClass('error'); $('#err_hospital').hide();
+                $('#hospital_name').removeClass('error');
+                $('#err_hospital').hide();
             }
 
             // Language
             if (!$('#language').val()) {
-                $('#language').addClass('error'); $('#err_language').show(); valid = false;
+                $('#language').addClass('error');
+                $('#err_language').show();
+                valid = false;
             } else {
-                $('#language').removeClass('error'); $('#err_language').hide();
+                $('#language').removeClass('error');
+                $('#err_language').hide();
             }
 
             // Birth date
             if (!$('#birth_date').val()) {
-                $('#birth_date').addClass('error'); $('#err_birth').show(); valid = false;
+                $('#birth_date').addClass('error');
+                $('#err_birth').show();
+                valid = false;
             } else {
-                $('#birth_date').removeClass('error'); $('#err_birth').hide();
+                $('#birth_date').removeClass('error');
+                $('#err_birth').hide();
             }
 
-            if (!valid) { e.preventDefault(); return false; }
+            if (!valid) {
+                e.preventDefault();
+                return false;
+            }
         });
     </script>
 
