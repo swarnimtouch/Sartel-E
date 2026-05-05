@@ -177,6 +177,10 @@
                 <div class="card-title">All Doctors</div>
                 <div class="card-sub">{{ $doctors->total() }} Doctors Found</div>
             </div>
+            <a href="{{ route('admin.doctors.download-photos', request()->query()) }}"
+               class="btn btn-success">
+                <i class="fas fa-download"></i> Download All Photos (ZIP)
+            </a>
 
             {{-- ── EXPORT BUTTON (top-right) ── --}}
             <a href="{{ route('admin.doctors.export') }}?{{ http_build_query(request()->only(['search'])) }}"

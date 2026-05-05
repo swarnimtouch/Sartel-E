@@ -115,5 +115,80 @@ class AdminController extends Controller
 
         return response()->stream($callback, 200, $headers);
     }
+    public function downloadPhotos(Request $request)
+    {
+        // Filters apply (same as index page)
+        $query = Doctor::with('employee')
+            ->whereNotNull('photo')
+            ->where('photo', '!=', '')
+            ->whereNotNull('speciality');
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('doctor_name', 'like', "%$s%")
+                    ->orWhere('speciality', 'like', "%$s%")
+                    ->orWhere('hospital_name', 'like', "%$s%");
+            });
+        }
+
+        if ($request->filled('speciality')) {
+            $query->where('speciality', $request->speciality);
+        }
+
+        $doctors = $query->get();
+
+        if ($doctors->isEmpty()) {
+            return back()->with('error', 'Koi photo available nahi hai.');
+        }
+
+        // Temp zip file
+        $zipFileName = 'doctors_photos_' . now()->format('Ymd_His') . '.zip';
+        $zipFilePath = storage_path('app/temp/' . $zipFileName);
+
+        if (!file_exists(storage_path('app/temp'))) {
+            mkdir(storage_path('app/temp'), 0777, true);
+        }
+
+        $zip = new \ZipArchive();
+        if ($zip->open($zipFilePath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            return back()->with('error', 'Zip file create nahi ho payi.');
+        }
+
+        foreach ($doctors as $doctor) {
+            try {
+                // S3 se file content lao
+                $fileContent = \Illuminate\Support\Facades\Storage::disk('s3')->get($doctor->photo);
+
+                if (!$fileContent) continue;
+
+                // Employee folder name
+                $employeeName = $doctor->employee
+                    ? preg_replace('/[^a-zA-Z0-9_]/', '_', $doctor->employee->name ?? 'unknown')
+                    : 'unknown';
+                $employeeCode = $doctor->employee->employee_code ?? 'emp_' . ($doctor->employee_id ?? '0');
+
+                $folderName = $employeeCode . '_' . $employeeName;
+
+                // Doctor image filename
+                $doctorSlug = preg_replace('/\s+/', '_', strtolower(trim($doctor->doctor_name ?? 'doctor')));
+                $doctorSlug = preg_replace('/[^a-z0-9_]/', '', $doctorSlug);
+                $ext        = pathinfo($doctor->photo, PATHINFO_EXTENSION) ?: 'png';
+                $fileName   = $doctorSlug . '_' . $doctor->id . '.' . $ext;
+
+                // Zip mein add karo: EmployeeFolder/doctor_image.png
+                $zip->addFromString($folderName . '/' . $fileName, $fileContent);
+
+            } catch (\Exception $e) {
+                // Agar ek file fail ho toh skip karo, baaki continue
+                continue;
+            }
+        }
+
+        $zip->close();
+
+        // Download karke temp file delete karo
+        return response()->download($zipFilePath, $zipFileName)->deleteFileAfterSend(true);
+    }
 
 }
