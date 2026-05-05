@@ -132,7 +132,11 @@ class AdminController extends Controller
             $query->where(function ($q) use ($s) {
                 $q->where('doctor_name', 'like', "%$s%")
                     ->orWhere('speciality', 'like', "%$s%")
-                    ->orWhere('hospital_name', 'like', "%$s%");
+                    ->orWhere('hospital_name', 'like', "%$s%")
+                    ->orWhereHas('employee', function ($emp) use ($s) {
+                        $emp->where('employee_code', 'like', "%$s%");
+                    });
+
             });
         }
 
