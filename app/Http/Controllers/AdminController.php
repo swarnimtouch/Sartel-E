@@ -21,7 +21,7 @@ class AdminController extends Controller
     public function index(Request $request)
     {
         $query = Doctor::with('employee')
-            ->whereNotNull('speciality'); // only updated doctors
+            ->whereNotNull('speciality');
 
         if ($request->filled('search')) {
             $s = $request->search;
@@ -53,8 +53,8 @@ class AdminController extends Controller
     public function export(Request $request)
     {
         $query = \App\Models\Doctor::with('employee')
-            ->whereNotNull('speciality')          // sirf jinka speciality ho
-            ->where('speciality', '!=', '')       // empty string bhi skip
+            ->whereNotNull('speciality')
+            ->where('speciality', '!=', '')
             ->when($request->search, function ($q) use ($request) {
                 $q->where('doctor_name', 'like', '%' . $request->search . '%')
                     ->orWhere('speciality',   'like', '%' . $request->search . '%');
@@ -75,10 +75,8 @@ class AdminController extends Controller
         $callback = function () use ($doctors) {
             $handle = fopen('php://output', 'w');
 
-            // UTF-8 BOM – Hindi/special chars Excel mein sahi dikhenge
             fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
-            // Header row
             fputcsv($handle, [
                 '#',
                 'Doctor Name',
@@ -93,7 +91,6 @@ class AdminController extends Controller
                 'Photo URL',
             ]);
 
-            // Data rows
             foreach ($doctors as $i => $doc) {
                 $photoUrl = $doc->photo
                     ? 'https://swarnimpolling.s3.ap-south-1.amazonaws.com/' . $doc->photo
@@ -121,7 +118,6 @@ class AdminController extends Controller
     }
     public function downloadPhotos(Request $request)
     {
-        // Filters apply (same as index page)
         $query = Doctor::with('employee')
             ->whereNotNull('photo')
             ->where('photo', '!=', '')
@@ -150,7 +146,6 @@ class AdminController extends Controller
             return back()->with('error', 'Koi photo available nahi hai.');
         }
 
-        // Temp zip file
         $zipFileName = 'doctors_photos_' . now()->format('Ymd_His') . '.zip';
         $zipFilePath = storage_path('app/temp/' . $zipFileName);
 
@@ -165,12 +160,10 @@ class AdminController extends Controller
 
         foreach ($doctors as $doctor) {
             try {
-                // S3 se file content lao
                 $fileContent = \Illuminate\Support\Facades\Storage::disk('s3')->get($doctor->photo);
 
                 if (!$fileContent) continue;
 
-                // Employee folder name
                 $employeeName = $doctor->employee
                     ? preg_replace('/[^a-zA-Z0-9_]/', '_', $doctor->employee->name ?? 'unknown')
                     : 'unknown';
@@ -184,18 +177,15 @@ class AdminController extends Controller
                 $ext        = pathinfo($doctor->photo, PATHINFO_EXTENSION) ?: 'png';
                 $fileName   = $doctorSlug . '_' . $doctor->id . '.' . $ext;
 
-                // Zip mein add karo: EmployeeFolder/doctor_image.png
                 $zip->addFromString($folderName . '/' . $fileName, $fileContent);
 
             } catch (\Exception $e) {
-                // Agar ek file fail ho toh skip karo, baaki continue
                 continue;
             }
         }
 
         $zip->close();
 
-        // Download karke temp file delete karo
         return response()->download($zipFilePath, $zipFileName)->deleteFileAfterSend(true);
     }
 
