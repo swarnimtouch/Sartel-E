@@ -32,13 +32,12 @@ Route::post('admin/login', [AuthController::class, 'login'])->name('login.post')
 Route::post('admin/logout', [AuthController::class, 'logout'])->name('admin.logout');
 Route::get('/doctor-import', [AuthController::class, 'importPage']);
 Route::post('/doctor-import', [AuthController::class, 'importDoctors'])->name('doctor.import');
-Route::get('/admin/doctors/download-photos', [AdminController::class, 'downloadPhotos'])
-    ->name('admin.doctors.download-photos');
-
 // Admin Routes (protected)
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
     Route::get('/doctors', [AdminController::class, 'index'])->name('doctors.index');
     Route::get('/doctors/export', [AdminController::class, 'export'])->name('doctors.export');
+    Route::get('/doctors/download-photos', [AdminController::class, 'downloadPhotos'])
+        ->name('doctors.download-photos');
 
 });

@@ -4,6 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Doctor;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use ZipArchive;
 
 class AdminController extends Controller
 {
@@ -118,6 +122,10 @@ class AdminController extends Controller
     }
     public function downloadPhotos(Request $request)
     {
+        // A large export can legitimately take several minutes. More importantly,
+        // keep every S3 object out of PHP/ZipArchive memory by staging it on disk.
+        set_time_limit(0);
+
         $query = Doctor::with('employee')
             ->whereNotNull('photo')
             ->where('photo', '!=', '')
@@ -140,53 +148,133 @@ class AdminController extends Controller
             $query->where('speciality', $request->speciality);
         }
 
-        $doctors = $query->get();
-
-        if ($doctors->isEmpty()) {
+        if (!(clone $query)->exists()) {
             return back()->with('error', 'Koi photo available nahi hai.');
         }
 
         $zipFileName = 'doctors_photos_' . now()->format('Ymd_His') . '.zip';
-        $zipFilePath = storage_path('app/temp/' . $zipFileName);
+        $exportId = (string) \Illuminate\Support\Str::uuid();
+        $exportDirectory = storage_path('app/temp/photo-exports/' . $exportId);
+        $zipFilePath = $exportDirectory . DIRECTORY_SEPARATOR . $zipFileName;
+        $stagingDirectory = $exportDirectory . DIRECTORY_SEPARATOR . 'staging';
 
-        if (!file_exists(storage_path('app/temp'))) {
-            mkdir(storage_path('app/temp'), 0777, true);
-        }
+        File::ensureDirectoryExists($stagingDirectory);
 
-        $zip = new \ZipArchive();
-        if ($zip->open($zipFilePath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+        $zip = new ZipArchive();
+        if ($zip->open($zipFilePath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+            File::deleteDirectory($exportDirectory);
             return back()->with('error', 'Zip file create nahi ho payi.');
         }
 
-        foreach ($doctors as $doctor) {
-            try {
-                $fileContent = \Illuminate\Support\Facades\Storage::disk('s3')->get($doctor->photo);
+        $added = 0;
+        $skipped = 0;
+        $zipIsOpen = true;
 
-                if (!$fileContent) continue;
+        try {
+            $query->orderBy('id')->chunkById(100, function ($doctors) use (
+                $zip,
+                $stagingDirectory,
+                &$added,
+                &$skipped
+            ) {
+                foreach ($doctors as $doctor) {
+                    $source = null;
+                    $destination = null;
+                    $stagedPath = $stagingDirectory . DIRECTORY_SEPARATOR . $doctor->id;
 
-                $employeeName = $doctor->employee
-                    ? preg_replace('/[^a-zA-Z0-9_]/', '_', $doctor->employee->name ?? 'unknown')
-                    : 'unknown';
-                $employeeCode = $doctor->employee->employee_code ?? 'emp_' . ($doctor->employee_id ?? '0');
+                    try {
+                        $source = Storage::disk('s3')->readStream($doctor->photo);
+                        $destination = fopen($stagedPath, 'wb');
 
-                $folderName = $employeeCode . '_' . $employeeName;
+                        if (!is_resource($source) || $destination === false) {
+                            throw new \RuntimeException('S3 stream open nahi ho paya.');
+                        }
 
-                // Doctor image filename
-                $doctorSlug = preg_replace('/\s+/', '_', strtolower(trim($doctor->doctor_name ?? 'doctor')));
-                $doctorSlug = preg_replace('/[^a-z0-9_]/', '', $doctorSlug);
-                $ext        = pathinfo($doctor->photo, PATHINFO_EXTENSION) ?: 'png';
-                $fileName   = $doctorSlug . '_' . $doctor->id . '.' . $ext;
+                        if (stream_copy_to_stream($source, $destination) === false) {
+                            throw new \RuntimeException('S3 stream copy nahi ho paya.');
+                        }
 
-                $zip->addFromString($folderName . '/' . $fileName, $fileContent);
+                        $employeeName = $doctor->employee
+                            ? preg_replace('/[^a-zA-Z0-9_-]/', '_', $doctor->employee->name ?? 'unknown')
+                            : 'unknown';
+                        $employeeCode = preg_replace(
+                            '/[^a-zA-Z0-9_-]/',
+                            '_',
+                            $doctor->employee->employee_code ?? 'emp_' . ($doctor->employee_id ?? '0')
+                        );
+                        $folderName = $employeeCode . '_' . $employeeName;
 
-            } catch (\Exception $e) {
-                continue;
+                        $doctorSlug = preg_replace('/\s+/', '_', strtolower(trim($doctor->doctor_name ?? 'doctor')));
+                        $doctorSlug = preg_replace('/[^a-z0-9_-]/', '', $doctorSlug) ?: 'doctor';
+                        $extension = strtolower(pathinfo($doctor->photo, PATHINFO_EXTENSION));
+                        $extension = preg_match('/^[a-z0-9]{1,10}$/', $extension) ? $extension : 'png';
+                        $fileName = $doctorSlug . '_' . $doctor->id . '.' . $extension;
+
+                        if (!$zip->addFile($stagedPath, $folderName . '/' . $fileName)) {
+                            throw new \RuntimeException('Image ZIP me add nahi ho payi.');
+                        }
+
+                        $added++;
+                    } catch (\Throwable $e) {
+                        $skipped++;
+                        File::delete($stagedPath);
+                        Log::warning('Doctor photo export skipped.', [
+                            'doctor_id' => $doctor->id,
+                            'photo' => $doctor->photo,
+                            'error' => $e->getMessage(),
+                        ]);
+                    } finally {
+                        if (is_resource($source)) {
+                            fclose($source);
+                        }
+                        if (is_resource($destination)) {
+                            fclose($destination);
+                        }
+                    }
+                }
+            });
+
+            $closed = $zip->close();
+            $zipIsOpen = false;
+
+            if (!$closed) {
+                throw new \RuntimeException('ZIP finalize nahi ho payi.');
             }
+        } catch (\Throwable $e) {
+            if ($zipIsOpen) {
+                try {
+                    $zip->close();
+                } catch (\Throwable) {
+                    // The archive may already be invalid; cleanup below is enough.
+                }
+            }
+            File::deleteDirectory($exportDirectory);
+            Log::error('Doctor photo export failed.', ['error' => $e->getMessage()]);
+
+            return back()->with('error', 'Photos ZIP create nahi ho payi. Please dobara try karein.');
         }
 
-        $zip->close();
+        // ZipArchive needs staged files until close(); they can now be removed.
+        File::deleteDirectory($stagingDirectory);
 
-        return response()->download($zipFilePath, $zipFileName)->deleteFileAfterSend(true);
+        if ($added === 0) {
+            File::deleteDirectory($exportDirectory);
+
+            return back()->with('error', 'S3 se koi photo download nahi ho payi. Logs check karein.');
+        }
+
+        Log::info('Doctor photo export completed.', compact('added', 'skipped'));
+
+        // BinaryFileResponse removes the ZIP after sending it; remove its now-empty
+        // unique parent directory when Laravel terminates the request.
+        app()->terminating(fn () => File::deleteDirectory($exportDirectory));
+
+        return response()
+            ->download($zipFilePath, $zipFileName, [
+                'X-Export-Images-Added' => (string) $added,
+                'X-Export-Images-Skipped' => (string) $skipped,
+            ])
+            ->deleteFileAfterSend(true);
     }
 
 }
