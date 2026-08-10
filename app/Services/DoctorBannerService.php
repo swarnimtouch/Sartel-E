@@ -70,7 +70,6 @@ class DoctorBannerService
         $nameFont = public_path('fonts/RobotoSlab-Bold.ttf');
         $specialityFont = public_path('fonts/RobotoSlab-Regular.ttf');
         $white = imagecolorallocate($banner, 255, 255, 255);
-        $accent = imagecolorallocate($banner, 210, 242, 255);
         $shadow = imagecolorallocatealpha($banner, 0, 0, 0, 55);
         $name = $this->fitText($doctor->doctor_name, $nameFont, 70, 1800);
         $speciality = $this->fitText($doctor->speciality ?: 'Doctor', $specialityFont, 55, 1800);
@@ -78,7 +77,7 @@ class DoctorBannerService
         imagettftext($banner, 70, 0, 363, 2123, $shadow, $nameFont, $name);
         imagettftext($banner, 70, 0, 360, 2120, $white, $nameFont, $name);
         imagettftext($banner, 55, 0, 362, 2242, $shadow, $specialityFont, $speciality);
-        imagettftext($banner, 55, 0, 360, 2240, $accent, $specialityFont, $speciality);
+        imagettftext($banner, 55, 0, 360, 2240, $white, $specialityFont, $speciality);
     }
 
     private function fitText(string $text, string $font, int $fontSize, int $maxWidth): string

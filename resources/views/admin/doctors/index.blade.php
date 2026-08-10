@@ -164,6 +164,68 @@
             transition: background .2s;
         }
         .btn-success:hover { background: #15803d; color: #fff; }
+
+        .image-preview-trigger {
+            padding: 0;
+            border: 0;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        .admin-banner-thumbnail {
+            width: 70px;
+            height: 90px;
+            object-fit: cover;
+            object-position: top;
+            border-radius: 7px;
+            display: block;
+            border: 1px solid var(--border);
+        }
+
+        .image-preview-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: rgba(2, 6, 23, .88);
+        }
+
+        .image-preview-modal.open { display: flex; }
+
+        .image-preview-dialog {
+            position: relative;
+            max-width: min(920px, 96vw);
+            max-height: 94vh;
+            padding: 48px 18px 18px;
+            border-radius: 14px;
+            background: var(--surface);
+            box-shadow: 0 24px 80px rgba(0, 0, 0, .5);
+        }
+
+        .image-preview-dialog img {
+            display: block;
+            max-width: 100%;
+            max-height: 78vh;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .image-preview-close {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            width: 32px;
+            height: 32px;
+            border: 0;
+            border-radius: 50%;
+            color: #fff;
+            background: #334155;
+            cursor: pointer;
+            font-size: 20px;
+        }
     </style>
 @endpush
 
@@ -238,11 +300,13 @@
                         <td>{{ $doctors->firstItem() + $loop->index }}</td>
                         <td>
                             @if($doc->photo)
-                                <a href="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->photo }}" target="_blank" download>
+                                <button type="button" class="image-preview-trigger"
+                                        data-image="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->photo }}"
+                                        data-alt="{{ $doc->doctor_name }} photo">
                                     <img src="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->photo }}"
                                          width="45" height="45"
                                          style="border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid var(--border);">
-                                </a>
+                                </button>
                             @else
                                 <div class="avatar-placeholder">
                                     {{ strtoupper(substr($doc->doctor_name, 0, 1)) }}
@@ -261,12 +325,13 @@
                         <td>{{ $doc->gender ?? '-' }}</td>
                         <td>
                             @if($doc->banner_path)
-                                <a href="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->banner_path }}"
-                                   target="_blank" download title="Download banner">
+                                <button type="button" class="image-preview-trigger"
+                                        data-image="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->banner_path }}"
+                                        data-alt="{{ $doc->doctor_name }} banner">
                                     <img src="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->banner_path }}"
                                          alt="{{ $doc->doctor_name }} banner"
-                                         style="width:180px;height:auto;border-radius:8px;display:block;border:1px solid var(--border);">
-                                </a>
+                                         class="admin-banner-thumbnail">
+                                </button>
                             @else
                                 -
                             @endif
@@ -305,11 +370,13 @@
             @forelse($doctors as $doc)
                 <div class="doctor-mobile-card">
                     @if($doc->photo)
-                        <a href="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->photo }}" target="_blank" download>
+                        <button type="button" class="image-preview-trigger"
+                                data-image="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->photo }}"
+                                data-alt="{{ $doc->doctor_name }} photo">
                             <img src="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->photo }}"
                                  width="45" height="45"
                                  style="border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid var(--border);">
-                        </a>
+                        </button>
                     @else
                         <div class="avatar-placeholder">
                             {{ strtoupper(substr($doc->doctor_name, 0, 1)) }}
@@ -323,12 +390,13 @@
                         <div class="dmc-name">{{ $doc->gender ?? '-' }}</div>
                         @if($doc->banner_path)
                             <div class="dmc-row">
-                                <a href="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->banner_path }}"
-                                   target="_blank" download>
+                                <button type="button" class="image-preview-trigger"
+                                        data-image="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->banner_path }}"
+                                        data-alt="{{ $doc->doctor_name }} banner">
                                     <img src="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->banner_path }}"
                                          alt="{{ $doc->doctor_name }} banner"
-                                         style="width:100%;max-width:320px;height:auto;border-radius:8px;display:block;">
-                                </a>
+                                         class="admin-banner-thumbnail">
+                                </button>
                             </div>
                         @endif
 
@@ -390,5 +458,42 @@
         @endif
 
     </div>
+
+    <div class="image-preview-modal" id="imagePreviewModal" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="image-preview-dialog">
+            <button type="button" class="image-preview-close" aria-label="Close preview">&times;</button>
+            <img id="imagePreviewFull" src="" alt="">
+        </div>
+    </div>
+
+    <script>
+        (() => {
+            const modal = document.getElementById('imagePreviewModal');
+            const fullImage = document.getElementById('imagePreviewFull');
+
+            document.querySelectorAll('.image-preview-trigger').forEach((trigger) => {
+                trigger.addEventListener('click', () => {
+                    fullImage.src = trigger.dataset.image;
+                    fullImage.alt = trigger.dataset.alt || 'Image preview';
+                    modal.classList.add('open');
+                    modal.setAttribute('aria-hidden', 'false');
+                });
+            });
+
+            const closePreview = () => {
+                modal.classList.remove('open');
+                modal.setAttribute('aria-hidden', 'true');
+                fullImage.src = '';
+            };
+
+            modal.querySelector('.image-preview-close').addEventListener('click', closePreview);
+            modal.addEventListener('click', (event) => {
+                if (event.target === modal) closePreview();
+            });
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && modal.classList.contains('open')) closePreview();
+            });
+        })();
+    </script>
 
 @endsection
