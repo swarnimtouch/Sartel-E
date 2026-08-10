@@ -17,6 +17,7 @@ class Doctor extends Model
         'birth_date',
         'language',
         'gender',
+        'banner_path',
     ];
     public function employee()
     {

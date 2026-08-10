@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\Doctor;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use App\Services\DoctorBannerService;
+use Illuminate\Support\Str;
 
 class DoctorController extends Controller
 {
@@ -28,14 +30,14 @@ class DoctorController extends Controller
         return view('doctor.create', compact('employees'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, DoctorBannerService $bannerService)
     {
         $request->validate([
             'doctor_id' => 'required|exists:doctors,id',
             'birth_date' => 'required|date',
             'speciality' => 'required',
             'language' => 'required',
-            'gender' => 'required|in:Male,Female,Other',
+            'gender' => 'required|in:Male,Female',
             'hospital_name' => 'required',
             'cropped_image' => 'required'
         ]);
@@ -44,6 +46,7 @@ class DoctorController extends Controller
         $employee_id = $employee->id;
 
         $employee_code = $employee->employee_code ?? 'emp_' . $employee_id;
+        $employee_name = Str::slug($employee->name ?: 'employee', '_');
 
         $doctor = Doctor::findOrFail($request->doctor_id);
 
@@ -67,7 +70,7 @@ class DoctorController extends Controller
             return back()->withErrors(['cropped_image' => 'Image processing failed. Please crop again.']);
         }
 
-        $s3Path = "employee_{$employee_code}/{$imageName}";
+        $s3Path = "employee_{$employee_code}_{$employee_name}/{$imageName}";
 
         Storage::disk('s3')->put($s3Path, $imageData, [
             'visibility' => 'public',
@@ -84,6 +87,8 @@ class DoctorController extends Controller
             'photo' => $s3Path,
         ]);
 
+        $bannerService->generate($doctor->fresh('employee'));
+
         return redirect()->route('doctors.index')
             ->with('success', 'Doctor added successfully!');
     }
@@ -98,15 +103,16 @@ class DoctorController extends Controller
         return view('doctor.edit', compact('doctor'));
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, $id, DoctorBannerService $bannerService)
     {
         $request->validate([
-            'gender' => 'required|in:Male,Female,Other',
+            'gender' => 'required|in:Male,Female',
         ]);
 
         $employee = Employee::findOrFail(Auth::id());
         $employee_id = $employee->id;
         $employee_code = $employee->employee_code ?? 'emp_' . $employee_id;
+        $employee_name = Str::slug($employee->name ?: 'employee', '_');
 
         $doctor = Doctor::where('id', $id)
             ->where('employee_id', $employee_id)
@@ -151,7 +157,7 @@ class DoctorController extends Controller
             }
 
             // ✅ Abhi employee_id use ho raha hai, baad mein employee_code se replace kar lena
-            $s3Path = "employee_{$employee_code}/{$imageName}";
+            $s3Path = "employee_{$employee_code}_{$employee_name}/{$imageName}";
 
             Storage::disk('s3')->put($s3Path, $imageData, [
                 'visibility' => 'public',
@@ -162,6 +168,8 @@ class DoctorController extends Controller
         }
 
         $doctor->update($data);
+
+        $bannerService->generate($doctor->fresh('employee'));
 
         return redirect()->route('doctors.index')
             ->with('success', 'Doctor updated successfully!');

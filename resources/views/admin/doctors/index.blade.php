@@ -179,7 +179,7 @@
             </div>
             <a href="{{ route('admin.doctors.download-photos', request()->query()) }}"
                class="btn btn-success">
-                <i class="fas fa-download"></i> Download All Photos (ZIP)
+                <i class="fas fa-download"></i> Download Photos &amp; Banners (ZIP)
             </a>
 
             {{-- ── EXPORT BUTTON (top-right) ── --}}
@@ -223,6 +223,7 @@
                     <th>Doctor Msl Code</th>
                     <th>Language</th>
                     <th>Gender</th>
+                    <th>Banner</th>
                     <th>Employee Name</th>
                     <th>Employee Code</th>
                     <th>Speciality</th>
@@ -258,6 +259,18 @@
                             <div class="doctor-name">{{ $doc->language }}</div>
                         </td>
                         <td>{{ $doc->gender ?? '-' }}</td>
+                        <td>
+                            @if($doc->banner_path)
+                                <a href="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->banner_path }}"
+                                   target="_blank" download title="Download banner">
+                                    <img src="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->banner_path }}"
+                                         alt="{{ $doc->doctor_name }} banner"
+                                         style="width:180px;height:auto;border-radius:8px;display:block;border:1px solid var(--border);">
+                                </a>
+                            @else
+                                -
+                            @endif
+                        </td>
                         <td>{{ $doc->employee->name ?? '-' }}</td>
                         <td>
                             <span class="doctor-id">{{ $doc->employee->employee_code ?? '-' }}</span>
@@ -275,7 +288,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="12">
+                        <td colspan="13">
                             <div class="empty-state">
                                 <i class="fas fa-user-md"></i>
                                 <p>No doctors found. Please adjust your filters.</p>
@@ -308,6 +321,16 @@
                         <div class="dmc-name">{{ $doc->msl_code }}</div>
                         <div class="dmc-name">{{ $doc->language }}</div>
                         <div class="dmc-name">{{ $doc->gender ?? '-' }}</div>
+                        @if($doc->banner_path)
+                            <div class="dmc-row">
+                                <a href="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->banner_path }}"
+                                   target="_blank" download>
+                                    <img src="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->banner_path }}"
+                                         alt="{{ $doc->doctor_name }} banner"
+                                         style="width:100%;max-width:320px;height:auto;border-radius:8px;display:block;">
+                                </a>
+                            </div>
+                        @endif
 
                         <div class="dmc-row">
                             <span><i class="fas fa-user" style="font-size:10px;"></i> {{ $doc->employee->name ?? '-' }}</span>

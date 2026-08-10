@@ -499,7 +499,7 @@
                 <div class="form-group full">
                     <label>Gender *</label>
                     <div style="display:flex;gap:24px;flex-wrap:wrap;padding-top:10px;">
-                        @foreach(['Male', 'Female', 'Other'] as $gender)
+                        @foreach(['Male', 'Female'] as $gender)
                             <label style="display:flex;align-items:center;gap:7px;text-transform:none;letter-spacing:0;cursor:pointer;">
                                 <input type="radio" name="gender" value="{{ $gender }}"
                                        style="width:auto;" {{ old('gender') === $gender ? 'checked' : '' }}>

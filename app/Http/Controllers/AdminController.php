@@ -94,6 +94,7 @@ class AdminController extends Controller
                 'Birth Date',
                 'Updated Date',
                 'Photo URL',
+                'Banner URL',
             ]);
 
             foreach ($doctors as $i => $doc) {
@@ -114,6 +115,9 @@ class AdminController extends Controller
                     $doc->birth_date              ?? '',
                     optional($doc->updated_at)->format('d M Y') ?? '',
                     $photoUrl,
+                    $doc->banner_path
+                        ? 'https://swarnimpolling.s3.ap-south-1.amazonaws.com/' . $doc->banner_path
+                        : '',
                 ]);
             }
 
@@ -129,8 +133,13 @@ class AdminController extends Controller
         set_time_limit(0);
 
         $query = Doctor::with('employee')
-            ->whereNotNull('photo')
-            ->where('photo', '!=', '')
+            ->where(function ($q) {
+                $q->where(function ($photo) {
+                    $photo->whereNotNull('photo')->where('photo', '!=', '');
+                })->orWhere(function ($banner) {
+                    $banner->whereNotNull('banner_path')->where('banner_path', '!=', '');
+                });
+            })
             ->whereNotNull('speciality');
 
         if ($request->filled('search')) {
@@ -151,10 +160,10 @@ class AdminController extends Controller
         }
 
         if (!(clone $query)->exists()) {
-            return back()->with('error', 'Koi photo available nahi hai.');
+            return back()->with('error', 'Koi photo ya banner available nahi hai.');
         }
 
-        $zipFileName = 'doctors_photos_' . now()->format('Ymd_His') . '.zip';
+        $zipFileName = 'doctors_photos_and_banners_' . now()->format('Ymd_His') . '.zip';
         $exportId = (string) \Illuminate\Support\Str::uuid();
         $exportDirectory = storage_path('app/temp/photo-exports/' . $exportId);
         $zipFilePath = $exportDirectory . DIRECTORY_SEPARATOR . $zipFileName;
@@ -180,57 +189,71 @@ class AdminController extends Controller
                 &$skipped
             ) {
                 foreach ($doctors as $doctor) {
-                    $source = null;
-                    $destination = null;
-                    $stagedPath = $stagingDirectory . DIRECTORY_SEPARATOR . $doctor->id;
+                    $employeeName = $doctor->employee
+                        ? preg_replace('/[^a-zA-Z0-9_-]/', '_', $doctor->employee->name ?? 'unknown')
+                        : 'unknown';
+                    $employeeCode = preg_replace(
+                        '/[^a-zA-Z0-9_-]/',
+                        '_',
+                        $doctor->employee->employee_code ?? 'emp_' . ($doctor->employee_id ?? '0')
+                    );
+                    $folderName = $employeeCode . '_' . $employeeName;
+                    $doctorSlug = preg_replace('/\s+/', '_', strtolower(trim($doctor->doctor_name ?? 'doctor')));
+                    $doctorSlug = preg_replace('/[^a-z0-9_-]/', '', $doctorSlug) ?: 'doctor';
 
-                    try {
-                        $source = Storage::disk('s3')->readStream($doctor->photo);
-                        $destination = fopen($stagedPath, 'wb');
+                    $assets = [
+                        'photos' => $doctor->photo,
+                        'banners' => $doctor->banner_path,
+                    ];
 
-                        if (!is_resource($source) || $destination === false) {
-                            throw new \RuntimeException('S3 stream open nahi ho paya.');
+                    foreach ($assets as $assetFolder => $s3Path) {
+                        if (!$s3Path) {
+                            continue;
                         }
 
-                        if (stream_copy_to_stream($source, $destination) === false) {
-                            throw new \RuntimeException('S3 stream copy nahi ho paya.');
-                        }
+                        $source = null;
+                        $destination = null;
+                        $stagedPath = $stagingDirectory . DIRECTORY_SEPARATOR . $doctor->id . '_' . $assetFolder;
 
-                        $employeeName = $doctor->employee
-                            ? preg_replace('/[^a-zA-Z0-9_-]/', '_', $doctor->employee->name ?? 'unknown')
-                            : 'unknown';
-                        $employeeCode = preg_replace(
-                            '/[^a-zA-Z0-9_-]/',
-                            '_',
-                            $doctor->employee->employee_code ?? 'emp_' . ($doctor->employee_id ?? '0')
-                        );
-                        $folderName = $employeeCode . '_' . $employeeName;
+                        try {
+                            $source = Storage::disk('s3')->readStream($s3Path);
+                            $destination = fopen($stagedPath, 'wb');
 
-                        $doctorSlug = preg_replace('/\s+/', '_', strtolower(trim($doctor->doctor_name ?? 'doctor')));
-                        $doctorSlug = preg_replace('/[^a-z0-9_-]/', '', $doctorSlug) ?: 'doctor';
-                        $extension = strtolower(pathinfo($doctor->photo, PATHINFO_EXTENSION));
-                        $extension = preg_match('/^[a-z0-9]{1,10}$/', $extension) ? $extension : 'png';
-                        $fileName = $doctorSlug . '_' . $doctor->id . '.' . $extension;
+                            if (!is_resource($source) || $destination === false) {
+                                throw new \RuntimeException('S3 stream open nahi ho paya.');
+                            }
 
-                        if (!$zip->addFile($stagedPath, $folderName . '/' . $fileName)) {
-                            throw new \RuntimeException('Image ZIP me add nahi ho payi.');
-                        }
+                            if (stream_copy_to_stream($source, $destination) === false) {
+                                throw new \RuntimeException('S3 stream copy nahi ho paya.');
+                            }
 
-                        $added++;
-                    } catch (\Throwable $e) {
-                        $skipped++;
-                        File::delete($stagedPath);
-                        Log::warning('Doctor photo export skipped.', [
-                            'doctor_id' => $doctor->id,
-                            'photo' => $doctor->photo,
-                            'error' => $e->getMessage(),
-                        ]);
-                    } finally {
-                        if (is_resource($source)) {
-                            fclose($source);
-                        }
-                        if (is_resource($destination)) {
-                            fclose($destination);
+                            $extension = strtolower(pathinfo($s3Path, PATHINFO_EXTENSION));
+                            $extension = preg_match('/^[a-z0-9]{1,10}$/', $extension) ? $extension : 'png';
+                            $suffix = $assetFolder === 'banners' ? '_banner' : '_photo';
+                            $fileName = $doctorSlug . '_' . $doctor->id . $suffix . '.' . $extension;
+                            $zipPath = $folderName . '/' . $assetFolder . '/' . $fileName;
+
+                            if (!$zip->addFile($stagedPath, $zipPath)) {
+                                throw new \RuntimeException('Image ZIP me add nahi ho payi.');
+                            }
+
+                            $added++;
+                        } catch (\Throwable $e) {
+                            $skipped++;
+                            File::delete($stagedPath);
+                            Log::warning('Doctor image export skipped.', [
+                                'doctor_id' => $doctor->id,
+                                'asset_type' => $assetFolder,
+                                'path' => $s3Path,
+                                'error' => $e->getMessage(),
+                            ]);
+                        } finally {
+                            if (is_resource($source)) {
+                                fclose($source);
+                            }
+                            if (is_resource($destination)) {
+                                fclose($destination);
+                            }
                         }
                     }
                 }
@@ -253,7 +276,7 @@ class AdminController extends Controller
             File::deleteDirectory($exportDirectory);
             Log::error('Doctor photo export failed.', ['error' => $e->getMessage()]);
 
-            return back()->with('error', 'Photos ZIP create nahi ho payi. Please dobara try karein.');
+            return back()->with('error', 'Photos aur banners ZIP create nahi ho payi. Please dobara try karein.');
         }
 
         // ZipArchive needs staged files until close(); they can now be removed.
@@ -262,10 +285,10 @@ class AdminController extends Controller
         if ($added === 0) {
             File::deleteDirectory($exportDirectory);
 
-            return back()->with('error', 'S3 se koi photo download nahi ho payi. Logs check karein.');
+            return back()->with('error', 'S3 se koi photo ya banner download nahi ho paya. Logs check karein.');
         }
 
-        Log::info('Doctor photo export completed.', compact('added', 'skipped'));
+        Log::info('Doctor photo and banner export completed.', compact('added', 'skipped'));
 
         // BinaryFileResponse removes the ZIP after sending it; remove its now-empty
         // unique parent directory when Laravel terminates the request.
