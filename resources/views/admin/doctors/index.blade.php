@@ -222,6 +222,7 @@
                     <th>Doctor</th>
                     <th>Doctor Msl Code</th>
                     <th>Language</th>
+                    <th>Gender</th>
                     <th>Employee Name</th>
                     <th>Employee Code</th>
                     <th>Speciality</th>
@@ -256,6 +257,7 @@
                         <td>
                             <div class="doctor-name">{{ $doc->language }}</div>
                         </td>
+                        <td>{{ $doc->gender ?? '-' }}</td>
                         <td>{{ $doc->employee->name ?? '-' }}</td>
                         <td>
                             <span class="doctor-id">{{ $doc->employee->employee_code ?? '-' }}</span>
@@ -273,7 +275,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="9">
+                        <td colspan="12">
                             <div class="empty-state">
                                 <i class="fas fa-user-md"></i>
                                 <p>No doctors found. Please adjust your filters.</p>
@@ -305,6 +307,7 @@
                         <div class="dmc-name">{{ $doc->doctor_name }}</div>
                         <div class="dmc-name">{{ $doc->msl_code }}</div>
                         <div class="dmc-name">{{ $doc->language }}</div>
+                        <div class="dmc-name">{{ $doc->gender ?? '-' }}</div>
 
                         <div class="dmc-row">
                             <span><i class="fas fa-user" style="font-size:10px;"></i> {{ $doc->employee->name ?? '-' }}</span>

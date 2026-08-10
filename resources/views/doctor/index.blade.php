@@ -290,6 +290,7 @@
                     <th>Photo</th>
                     <th>Name</th>
                     <th>Language</th>
+                    <th>Gender</th>
                     <th>MSL Code</th>
                     <th>Speciality</th>
                     <th>Hospital</th>
@@ -309,6 +310,7 @@
                         </td>
                         <td class="doctor-name">{{ $doctor->doctor_name }}</td>
                         <td class="text-muted">{{ $doctor->language ?? '-' }}</td>
+                        <td class="text-muted">{{ $doctor->gender ?? '-' }}</td>
                         <td class="text-muted">{{ $doctor->msl_code ?? '-' }}</td>
                         <td class="text-muted">{{ $doctor->speciality ?? '-' }}</td>
                         <td class="text-muted">{{ $doctor->hospital_name ?? '-' }}</td>
@@ -328,7 +330,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" style="padding:40px;text-align:center;color:#94a3b8;">
+                        <td colspan="10" style="padding:40px;text-align:center;color:#94a3b8;">
                             No doctors found. <a href="{{ route('doctors.create') }}" style="color:#38bdf8;font-weight:600;">Add your first doctor!</a>
                         </td>
                     </tr>
@@ -352,6 +354,7 @@
                         <div class="name">{{ $doctor->doctor_name }}</div>
                         <div class="name">{{ $doctor->msl_code }}</div>
                         <div class="name">{{ $doctor->language }}</div>
+                        <div class="name">{{ $doctor->gender ?? '-' }}</div>
                         <div class="meta">
                             🏥 {{ $doctor->hospital_name ?? 'N/A' }}
                         </div>

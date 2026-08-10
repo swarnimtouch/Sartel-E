@@ -35,6 +35,7 @@ class DoctorController extends Controller
             'birth_date' => 'required|date',
             'speciality' => 'required',
             'language' => 'required',
+            'gender' => 'required|in:Male,Female,Other',
             'hospital_name' => 'required',
             'cropped_image' => 'required'
         ]);
@@ -79,6 +80,7 @@ class DoctorController extends Controller
             'hospital_name' => $request->hospital_name,
             'birth_date' => $request->birth_date,
             'language' => $request->language,
+            'gender' => $request->gender,
             'photo' => $s3Path,
         ]);
 
@@ -98,6 +100,10 @@ class DoctorController extends Controller
 
     public function update(Request $request, $id)
     {
+        $request->validate([
+            'gender' => 'required|in:Male,Female,Other',
+        ]);
+
         $employee = Employee::findOrFail(Auth::id());
         $employee_id = $employee->id;
         $employee_code = $employee->employee_code ?? 'emp_' . $employee_id;
@@ -114,6 +120,7 @@ class DoctorController extends Controller
             'city' => $request->city,
             'mobile' => $request->mobile,
             'language' => $request->language,
+            'gender' => $request->gender,
         ];
 
         if ($request->filled('cropped_image')) {

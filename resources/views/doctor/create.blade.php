@@ -496,6 +496,21 @@
                     <span class="err-msg" id="err_hospital">Hospital name is required.</span>
                 </div>
 
+                <div class="form-group full">
+                    <label>Gender *</label>
+                    <div style="display:flex;gap:24px;flex-wrap:wrap;padding-top:10px;">
+                        @foreach(['Male', 'Female', 'Other'] as $gender)
+                            <label style="display:flex;align-items:center;gap:7px;text-transform:none;letter-spacing:0;cursor:pointer;">
+                                <input type="radio" name="gender" value="{{ $gender }}"
+                                       style="width:auto;" {{ old('gender') === $gender ? 'checked' : '' }}>
+                                {{ $gender }}
+                            </label>
+                        @endforeach
+                    </div>
+                    <span class="err-msg" id="err_gender">Please select a gender.</span>
+                    @error('gender')<span class="err-msg" style="display:block;">{{ $message }}</span>@enderror
+                </div>
+
                 {{-- Photo --}}
                 <div class="form-group full">
                     <label>Doctor Photo *</label>
@@ -722,6 +737,13 @@
                 $('#language').addClass('error'); $('#err_language').show(); valid = false;
             } else {
                 $('#language').removeClass('error'); $('#err_language').hide();
+            }
+
+            // Photo
+            if (!$('input[name="gender"]:checked').length) {
+                $('#err_gender').show(); valid = false;
+            } else {
+                $('#err_gender').hide();
             }
 
             // Photo

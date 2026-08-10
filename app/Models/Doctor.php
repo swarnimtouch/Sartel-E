@@ -16,6 +16,7 @@ class Doctor extends Model
         'msl_code',
         'birth_date',
         'language',
+        'gender',
     ];
     public function employee()
     {
