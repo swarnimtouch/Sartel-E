@@ -172,14 +172,32 @@
             cursor: pointer;
         }
 
-        .admin-banner-thumbnail {
-            width: 70px;
-            height: 90px;
-            object-fit: cover;
-            object-position: top;
-            border-radius: 7px;
-            display: block;
-            border: 1px solid var(--border);
+        .banner-preview-cell {
+            display: flex;
+            align-items: center;
+        }
+
+        .preview-banner-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 14px;
+            border: 1px solid rgba(96, 165, 250, .7);
+            border-radius: 999px;
+            color: #fff;
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            box-shadow: 0 5px 15px rgba(59, 130, 246, .25);
+            transition: transform .2s, box-shadow .2s, filter .2s;
+        }
+
+        .preview-banner-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(124, 58, 237, .35);
+            filter: brightness(1.08);
         }
 
         .image-preview-modal {
@@ -325,13 +343,13 @@
                         <td>{{ $doc->gender ?? '-' }}</td>
                         <td>
                             @if($doc->banner_path)
-                                <button type="button" class="image-preview-trigger"
-                                        data-image="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->banner_path }}"
-                                        data-alt="{{ $doc->doctor_name }} banner">
-                                    <img src="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->banner_path }}"
-                                         alt="{{ $doc->doctor_name }} banner"
-                                         class="admin-banner-thumbnail">
-                                </button>
+                                <div class="banner-preview-cell">
+                                    <button type="button" class="image-preview-trigger preview-banner-button"
+                                            data-image="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->banner_path }}"
+                                            data-alt="{{ $doc->doctor_name }} banner">
+                                        <i class="fas fa-eye"></i> Preview Banner
+                                    </button>
+                                </div>
                             @else
                                 -
                             @endif
@@ -390,13 +408,13 @@
                         <div class="dmc-name">{{ $doc->gender ?? '-' }}</div>
                         @if($doc->banner_path)
                             <div class="dmc-row">
-                                <button type="button" class="image-preview-trigger"
-                                        data-image="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->banner_path }}"
-                                        data-alt="{{ $doc->doctor_name }} banner">
-                                    <img src="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->banner_path }}"
-                                         alt="{{ $doc->doctor_name }} banner"
-                                         class="admin-banner-thumbnail">
-                                </button>
+                                <div class="banner-preview-cell">
+                                    <button type="button" class="image-preview-trigger preview-banner-button"
+                                            data-image="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->banner_path }}"
+                                            data-alt="{{ $doc->doctor_name }} banner">
+                                        <i class="fas fa-eye"></i> Preview Banner
+                                    </button>
+                                </div>
                             </div>
                         @endif
 
