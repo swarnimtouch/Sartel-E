@@ -54,6 +54,42 @@ class AdminController extends Controller
 
         return view('admin.doctors.index', compact('doctors','specialities'));
     }
+
+    public function resetDoctor(Doctor $doctor)
+    {
+        $s3Paths = array_values(array_filter([
+            $doctor->photo,
+            $doctor->banner_path,
+        ]));
+
+        if ($s3Paths && !Storage::disk('s3')->delete($s3Paths)) {
+            Log::error('Admin doctor reset could not delete S3 files.', [
+                'doctor_id' => $doctor->id,
+                'paths' => $s3Paths,
+            ]);
+
+            return back()->with(
+                'error',
+                'The doctor was not reset because the photo or banner could not be deleted from S3. Please try again.'
+            );
+        }
+
+        $doctor->forceFill([
+            'speciality' => null,
+            'hospital_name' => null,
+            'birth_date' => null,
+            'language' => null,
+            'gender' => null,
+            'photo' => null,
+            'banner_path' => null,
+        ])->save();
+
+        return redirect()->route('admin.doctors.index')->with(
+            'success',
+            "{$doctor->doctor_name}'s submitted data, photo, and banner were deleted. The doctor name and MSL code were preserved."
+        );
+    }
+
     public function export(Request $request)
     {
         $query = \App\Models\Doctor::with('employee')

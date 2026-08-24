@@ -165,6 +165,43 @@
         }
         .btn-success:hover { background: #15803d; color: #fff; }
 
+        .admin-flash {
+            margin: 0 0 16px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .admin-flash-success { color: #a7f3d0; background: rgba(16,185,129,.14); border: 1px solid rgba(16,185,129,.35); }
+        .admin-flash-error { color: #fecaca; background: rgba(239,68,68,.14); border: 1px solid rgba(239,68,68,.35); }
+
+        .btn-reset-doctor {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            border: 1px solid rgba(239, 68, 68, .5);
+            border-radius: 8px;
+            color: #fca5a5;
+            background: rgba(239, 68, 68, .1);
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .btn-reset-doctor:hover { color: #fff; background: #dc2626; }
+
+        .doctor-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         .image-preview-trigger {
             padding: 0;
             border: 0;
@@ -249,6 +286,13 @@
 
 @section('content')
 
+    @if(session('success'))
+        <div class="admin-flash admin-flash-success">{{ session('success') }}</div>
+    @endif
+    @if(session('error'))
+        <div class="admin-flash admin-flash-error">{{ session('error') }}</div>
+    @endif
+
     <div class="card">
 
         {{-- Header --}}
@@ -310,6 +354,7 @@
                     <th>Hospital</th>
                     <th>Birth Date</th>
                     <th>Updated</th>
+                    <th>Action</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -368,10 +413,23 @@
                         <td>{{ $doc->hospital_name ?? '-' }}</td>
                         <td>{{ $doc->birth_date ?? '-' }}</td>
                         <td>{{ optional($doc->updated_at)->format('d M Y') ?? '-' }}</td>
+                        <td>
+                            <div class="doctor-actions">
+                                <form method="POST" action="{{ route('admin.doctors.reset', $doc) }}"
+                                      class="reset-doctor-form">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn-reset-doctor" title="Delete submitted data"
+                                            aria-label="Delete submitted data for {{ $doc->doctor_name }}">
+                                        <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="13">
+                        <td colspan="14">
                             <div class="empty-state">
                                 <i class="fas fa-user-md"></i>
                                 <p>No doctors found. Please adjust your filters.</p>
@@ -432,6 +490,18 @@
                         @if($doc->speciality)
                             <span class="dmc-badge">{{ $doc->speciality }}</span>
                         @endif
+
+                        <div class="dmc-row">
+                            <form method="POST" action="{{ route('admin.doctors.reset', $doc) }}"
+                                  class="reset-doctor-form">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn-reset-doctor" title="Delete submitted data"
+                                        aria-label="Delete submitted data for {{ $doc->doctor_name }}">
+                                    <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             @empty
@@ -512,6 +582,30 @@
                 if (event.key === 'Escape' && modal.classList.contains('open')) closePreview();
             });
         })();
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.querySelectorAll('.reset-doctor-form').forEach((form) => {
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+
+                Swal.fire({
+                    titleText: 'Delete submitted data?',
+                    text: 'The photo and banner will be deleted from S3. Doctor name and MSL code will be preserved.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc2626',
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: '<i class="fas fa-trash-alt"></i> Delete',
+                    cancelButtonText: 'Cancel',
+                    reverseButtons: true,
+                    focusCancel: true
+                }).then((result) => {
+                    if (result.isConfirmed) form.submit();
+                });
+            });
+        });
     </script>
 
 @endsection

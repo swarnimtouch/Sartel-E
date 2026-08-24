@@ -90,7 +90,7 @@ class DoctorController extends Controller
         $bannerService->generate($doctor->fresh('employee'));
 
         return redirect()->route('doctors.index')
-            ->with('success', 'Doctor added successfully!');
+            ->with('success', 'Doctor saved successfully!');
     }
 
 
@@ -200,4 +200,5 @@ class DoctorController extends Controller
         $doctor = Doctor::find($request->doctor_id);
         return response()->json(['msl_code' => $doctor?->msl_code ?? '']);
     }
+
 }

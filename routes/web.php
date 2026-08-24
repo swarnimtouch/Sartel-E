@@ -37,6 +37,8 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
     Route::get('/doctors', [AdminController::class, 'index'])->name('doctors.index');
     Route::get('/doctors/export', [AdminController::class, 'export'])->name('doctors.export');
+    Route::delete('/doctors/{doctor}', [AdminController::class, 'resetDoctor'])
+        ->name('doctors.reset');
     Route::get('/doctors/download-photos', [AdminController::class, 'downloadPhotos'])
         ->name('doctors.download-photos');
 
