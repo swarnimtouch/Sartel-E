@@ -25,7 +25,9 @@ class EmployeeLoginController extends Controller
         }
 
         // password = employee_code
-        if($request->password != $employee->employee_code || !in_array($employee->designation_name, ['BE', 'TBM'], true)){
+        $designation = strtoupper(trim((string) $employee->designation_name));
+
+        if($request->password != $employee->employee_code || !in_array($designation, ['BE', 'TBM'], true)){
             return back()->with('error','Invalid Employee Code or Password');
         }
 
