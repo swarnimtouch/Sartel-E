@@ -13,6 +13,8 @@ class AdminController extends Controller
 {
     public function dashboard()
     {
+
+    
         $totalDoctors = Doctor::whereNotNull('speciality')->count();
         $specialities    = Doctor::distinct('speciality')->count('speciality');
         $recentDoctors   = Doctor::latest()->take(5)->get();
