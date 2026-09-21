@@ -3,7 +3,8 @@
 namespace App\Imports;
 
 use App\Models\Doctor;
-use App\Models\Employee;
+use App\Services\DoctorBannerService;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\SkipsOnError;
@@ -18,100 +19,79 @@ class DoctorImport implements ToModel, WithHeadingRow, SkipsOnError
     private int $updatedCount = 0;
     private int $skippedCount = 0;
 
+    public function __construct(
+        private readonly DoctorBannerService $bannerService,
+    ) {
+    }
+
     public function model(array $row)
     {
-        $positionCode = trim($row['position_code'] ?? '');
         $mslCode = trim($row['msl_code'] ?? '');
         $doctorName = trim($row['doctor_name'] ?? '');
+        $speciality = trim($row['speciality'] ?? $row['specialty'] ?? '');
 
-        $employee = Employee::where('position_code', $positionCode)->first();
-
-        if (!$employee) {
-            \Log::warning(
-                'Employee not found. Position Code: ' . $positionCode
-            );
+        if ($mslCode === '' || $doctorName === '') {
+            Log::warning('Doctor import row skipped because MSL code or doctor name is empty.', [
+                'msl_code' => $mslCode,
+                'doctor_name' => $doctorName,
+            ]);
 
             $this->skippedCount++;
 
             return null;
         }
 
-        $existing = Doctor::where('employee_id', $employee->id)
-            ->where('msl_code', $mslCode)
-            ->first();
+        $existing = Doctor::where('msl_code', $mslCode)->first();
 
         if ($existing) {
+            $oldDoctorName = $existing->doctor_name;
+            $oldSpeciality = $existing->speciality;
+            $newSpeciality = $speciality !== '' ? $speciality : null;
+            $textChanged = $oldDoctorName !== $doctorName || $oldSpeciality !== $newSpeciality;
 
-    \Log::info('Doctor UPDATE - MSL MATCH', [
-        'excel_position_code' => $positionCode,
-        'employee_id'         => $employee->id,
-        'doctor_id'           => $existing->id,
-        'old_doctor_name'     => $existing->doctor_name,
-        'new_doctor_name'     => $doctorName,
-        'old_msl_code'        => $existing->msl_code,
-        'new_msl_code'        => $mslCode,
-    ]);
+            Log::info('Doctor import update - MSL match.', [
+                'doctor_id' => $existing->id,
+                'msl_code' => $mslCode,
+                'old_doctor_name' => $oldDoctorName,
+                'new_doctor_name' => $doctorName,
+                'old_speciality' => $oldSpeciality,
+                'new_speciality' => $newSpeciality,
+            ]);
 
-    $existing->timestamps = false;
+            $existing->update([
+                'doctor_name' => $doctorName,
+                'speciality' => $newSpeciality,
+            ]);
 
-    $updated = $existing->update([
-        'doctor_name' => $doctorName,
-        'msl_code' => $mslCode,
-    ]);
+            if ($textChanged && $existing->banner_path) {
+                try {
+                    $this->bannerService->refreshBannerText($existing->fresh('employee'));
+                } catch (Throwable $exception) {
+                    Log::warning('Doctor data updated, but banner text refresh failed.', [
+                        'doctor_id' => $existing->id,
+                        'banner_path' => $existing->banner_path,
+                        'error' => $exception->getMessage(),
+                    ]);
+                }
+            }
 
-    \Log::info('Doctor UPDATE RESULT', [
-        'doctor_id' => $existing->id,
-        'updated'   => $updated,
-    ]);
+            $this->updatedCount++;
 
-    $this->updatedCount++;
+            return null;
+        }
 
-    return null;
-}
-
-        $existingByName = Doctor::where('employee_id', $employee->id)
-            ->where('doctor_name', $doctorName)
-            ->first();
-
-        if ($existingByName) {
-
-    \Log::info('Doctor UPDATE - NAME MATCH', [
-        'excel_position_code' => $positionCode,
-        'employee_id'         => $employee->id,
-        'doctor_id'           => $existingByName->id,
-        'doctor_name'         => $doctorName,
-        'old_msl_code'        => $existingByName->msl_code,
-        'new_msl_code'        => $mslCode,
-    ]);
-
-    $existingByName->timestamps = false;
-
-    $updated = $existingByName->update([
-        'msl_code' => $mslCode,
-    ]);
-
-    \Log::info('Doctor UPDATE RESULT', [
-        'doctor_id' => $existingByName->id,
-        'updated'   => $updated,
-    ]);
-
-    $this->updatedCount++;
-
-    return null;
-}
-
-        $this->insertedCount++;
-
-        return new Doctor([
-            'employee_id' => $employee->id,
-            'doctor_name' => $doctorName,
-            'msl_code' => $mslCode,
+        Log::warning('Doctor import row skipped because MSL code was not found.', [
+                'msl_code' => $mslCode,
         ]);
+
+        $this->skippedCount++;
+
+        return null;
     }
 
     public function onError(Throwable $e)
     {
-        \Log::error('Doctor Import Error', [
+        Log::error('Doctor Import Error', [
             'message' => $e->getMessage(),
             'file' => $e->getFile(),
             'line' => $e->getLine(),

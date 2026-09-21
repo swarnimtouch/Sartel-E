@@ -199,6 +199,67 @@ Replace the head and face of the doctor in Photo 1 with the head and face of the
         }
     }
 
+    public function refreshBannerText(Doctor $doctor): bool
+    {
+        $templateName = match ($doctor->gender) {
+            'Male' => 'male-template.jpg',
+            'Female' => 'female-template.jpg',
+            default => null,
+        };
+
+        if (!$templateName || !$doctor->banner_path) {
+            return false;
+        }
+
+        $disk = Storage::disk('s3');
+
+        if (!$disk->exists($doctor->banner_path)) {
+            throw new RuntimeException('Existing doctor banner was not found on S3.');
+        }
+
+        $banner = imagecreatefromstring($disk->get($doctor->banner_path));
+        $template = imagecreatefromjpeg(public_path('images/doctor-banners/' . $templateName));
+
+        if (!$banner || !$template) {
+            throw new RuntimeException('Banner or template image could not be read.');
+        }
+
+        try {
+            if (imagesx($banner) !== 2550 || imagesy($banner) !== 3300) {
+                throw new RuntimeException('Existing banner dimensions are not supported for text refresh.');
+            }
+
+            imagecopy(
+                $banner,
+                $template,
+                280,
+                2010,
+                280,
+                2010,
+                1990,
+                320,
+            );
+
+            $this->placeText($banner, $doctor);
+
+            ob_start();
+            imagepng($banner, null, 7);
+            $bannerContents = ob_get_clean();
+
+            if ($bannerContents === false || !$disk->put($doctor->banner_path, $bannerContents, [
+                'visibility' => 'public',
+                'ContentType' => 'image/png',
+            ])) {
+                throw new RuntimeException('Updated banner could not be saved to S3.');
+            }
+        } finally {
+            imagedestroy($banner);
+            imagedestroy($template);
+        }
+
+        return true;
+    }
+
     private function getResizedTemplateBytes(string $filePath, int $targetWidth = 1024): string
     {
         list($origW, $origH) = getimagesize($filePath);

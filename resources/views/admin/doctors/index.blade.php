@@ -520,7 +520,7 @@
                             @if($doc->banner_path)
                                 <div class="banner-preview-cell">
                                     <button type="button" class="image-preview-trigger preview-banner-button"
-                                            data-image="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->banner_path }}"
+                                            data-image="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->banner_path }}?v={{ optional($doc->updated_at)->timestamp }}"
                                             data-alt="{{ $doc->doctor_name }} banner">
                                         <i class="fas fa-eye"></i> Preview Banner
                                     </button>
@@ -631,7 +631,7 @@
                             <div class="dmc-row">
                                 <div class="banner-preview-cell">
                                     <button type="button" class="image-preview-trigger preview-banner-button"
-                                            data-image="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->banner_path }}"
+                                            data-image="https://swarnimpolling.s3.ap-south-1.amazonaws.com/{{ $doc->banner_path }}?v={{ optional($doc->updated_at)->timestamp }}"
                                             data-alt="{{ $doc->doctor_name }} banner">
                                         <i class="fas fa-eye"></i> Preview Banner
                                     </button>
