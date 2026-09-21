@@ -30,7 +30,7 @@ class DoctorBannerService
             }
 
             $this->placeText($template, $doctor);
-            $template = $this->preparePrintBanner($template);
+            $template = $this->resizeGeneratedBanner($template);
 
             ob_start();
             imagepng($template, null, 8);
@@ -147,7 +147,7 @@ Replace the head and face of the doctor in Photo 1 with the head and face of the
                 throw new RuntimeException('Failed to parse AI generated image from OpenAI.');
             }
 
-            // Work at the source template size, then crop to the final 8.4 x 11 inch print canvas.
+            // Work at the source template size, then resize the complete design to final output dimensions.
             $finalBanner = imagecreatetruecolor(2550, 3300);
             imagecopyresampled(
                 $finalBanner,
@@ -161,7 +161,7 @@ Replace the head and face of the doctor in Photo 1 with the head and face of the
 
             // Overlay Doctor name and speciality in high resolution with shadow
             $this->placeText($finalBanner, $doctor);
-            $finalBanner = $this->preparePrintBanner($finalBanner);
+            $finalBanner = $this->resizeGeneratedBanner($finalBanner);
 
             ob_start();
             imagepng($finalBanner, null, 7);
@@ -262,29 +262,33 @@ Replace the head and face of the doctor in Photo 1 with the head and face of the
         return true;
     }
 
-    private function preparePrintBanner(\GdImage $banner): \GdImage
+    private function resizeGeneratedBanner(\GdImage $banner): \GdImage
     {
-        $targetWidth = 2520;
-        $targetHeight = 3300;
+        $targetWidth = 1216;
+        $targetHeight = 1568;
 
         if (imagesx($banner) !== $targetWidth || imagesy($banner) !== $targetHeight) {
-            $cropX = max(0, (int) floor((imagesx($banner) - $targetWidth) / 2));
-            $cropped = imagecrop($banner, [
-                'x' => $cropX,
-                'y' => 0,
-                'width' => $targetWidth,
-                'height' => $targetHeight,
-            ]);
+            $resized = imagecreatetruecolor($targetWidth, $targetHeight);
 
-            if (!$cropped) {
-                throw new RuntimeException('The banner could not be cropped to 8.4 x 11 inches.');
+            if (!imagecopyresampled(
+                $resized,
+                $banner,
+                0,
+                0,
+                0,
+                0,
+                $targetWidth,
+                $targetHeight,
+                imagesx($banner),
+                imagesy($banner),
+            )) {
+                imagedestroy($resized);
+                throw new RuntimeException('The banner could not be resized to 1216 x 1568 pixels.');
             }
 
             imagedestroy($banner);
-            $banner = $cropped;
+            $banner = $resized;
         }
-
-        imageresolution($banner, 300, 300);
 
         return $banner;
     }
