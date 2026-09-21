@@ -3,106 +3,76 @@
 namespace App\Imports;
 
 use App\Models\Doctor;
-use App\Services\DoctorBannerService;
-use Illuminate\Support\Facades\Log;
-use Maatwebsite\Excel\Concerns\ToModel;
+use Illuminate\Support\Collection;
+use Maatwebsite\Excel\Concerns\ToCollection;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
-use Maatwebsite\Excel\Concerns\SkipsOnError;
-use Maatwebsite\Excel\Concerns\SkipsErrors;
-use Throwable;
 
-class DoctorImport implements ToModel, WithHeadingRow, SkipsOnError
+class DoctorImport implements ToCollection, WithHeadingRow, WithChunkReading
 {
-    use SkipsErrors;
-
-    private int $insertedCount = 0;
     private int $updatedCount = 0;
     private int $skippedCount = 0;
 
-    public function __construct(
-        private readonly DoctorBannerService $bannerService,
-    ) {
-    }
-
-    public function model(array $row)
+    public function collection(Collection $rows): void
     {
-        $mslCode = trim($row['msl_code'] ?? '');
-        $doctorName = trim($row['doctor_name'] ?? '');
-        $speciality = trim($row['speciality'] ?? $row['specialty'] ?? '');
+        $recordsByMsl = [];
 
-        if ($mslCode === '' || $doctorName === '') {
-            Log::warning('Doctor import row skipped because MSL code or doctor name is empty.', [
-                'msl_code' => $mslCode,
-                'doctor_name' => $doctorName,
-            ]);
+        foreach ($rows as $row) {
+            $mslCode = trim((string) ($row['msl_code'] ?? ''));
+            $doctorName = trim((string) ($row['doctor_name'] ?? ''));
+            $speciality = trim((string) ($row['speciality'] ?? $row['specialty'] ?? ''));
 
-            $this->skippedCount++;
-
-            return null;
-        }
-
-        $existing = Doctor::where('msl_code', $mslCode)->first();
-
-        if ($existing) {
-            $oldDoctorName = $existing->doctor_name;
-            $oldSpeciality = $existing->speciality;
-            $newSpeciality = $speciality !== '' ? $speciality : null;
-            $textChanged = $oldDoctorName !== $doctorName || $oldSpeciality !== $newSpeciality;
-
-            Log::info('Doctor import update - MSL match.', [
-                'doctor_id' => $existing->id,
-                'msl_code' => $mslCode,
-                'old_doctor_name' => $oldDoctorName,
-                'new_doctor_name' => $doctorName,
-                'old_speciality' => $oldSpeciality,
-                'new_speciality' => $newSpeciality,
-            ]);
-
-            $existing->update([
-                'doctor_name' => $doctorName,
-                'speciality' => $newSpeciality,
-            ]);
-
-            if ($textChanged && $existing->banner_path) {
-                try {
-                    $this->bannerService->refreshBannerText($existing->fresh('employee'));
-                } catch (Throwable $exception) {
-                    Log::warning('Doctor data updated, but banner text refresh failed.', [
-                        'doctor_id' => $existing->id,
-                        'banner_path' => $existing->banner_path,
-                        'error' => $exception->getMessage(),
-                    ]);
-                }
+            if ($mslCode === '' || $doctorName === '') {
+                $this->skippedCount++;
+                continue;
             }
 
-            $this->updatedCount++;
-
-            return null;
+            $recordsByMsl[$mslCode] = [
+                'doctor_name' => $doctorName,
+                'speciality' => $speciality !== '' ? $speciality : null,
+            ];
         }
 
-        Log::warning('Doctor import row skipped because MSL code was not found.', [
-                'msl_code' => $mslCode,
-        ]);
+        if ($recordsByMsl === []) {
+            return;
+        }
 
-        $this->skippedCount++;
+        $existingDoctors = Doctor::query()
+            ->whereIn('msl_code', array_keys($recordsByMsl))
+            ->get(['id', 'employee_id', 'msl_code', 'created_at'])
+            ->keyBy(fn (Doctor $doctor) => (string) $doctor->msl_code);
 
-        return null;
-    }
+        $updates = [];
+        $updatedAt = now();
 
-    public function onError(Throwable $e)
-    {
-        Log::error('Doctor Import Error', [
-            'message' => $e->getMessage(),
-            'file' => $e->getFile(),
-            'line' => $e->getLine(),
-        ]);
+        foreach ($recordsByMsl as $mslCode => $record) {
+            $doctor = $existingDoctors->get($mslCode);
 
-        $this->skippedCount++;
-    }
+            if (!$doctor) {
+                $this->skippedCount++;
+                continue;
+            }
 
-    public function getInsertedCount(): int
-    {
-        return $this->insertedCount;
+            $updates[] = [
+                'id' => $doctor->id,
+                'employee_id' => $doctor->employee_id,
+                'msl_code' => $doctor->msl_code,
+                'doctor_name' => $record['doctor_name'],
+                'speciality' => $record['speciality'],
+                'created_at' => $doctor->created_at,
+                'updated_at' => $updatedAt,
+            ];
+        }
+
+        if ($updates !== []) {
+            Doctor::upsert(
+                $updates,
+                ['id'],
+                ['doctor_name', 'speciality', 'updated_at'],
+            );
+
+            $this->updatedCount += count($updates);
+        }
     }
 
     public function getUpdatedCount(): int
@@ -113,5 +83,10 @@ class DoctorImport implements ToModel, WithHeadingRow, SkipsOnError
     public function getSkippedCount(): int
     {
         return $this->skippedCount;
+    }
+
+    public function chunkSize(): int
+    {
+        return 100;
     }
 }

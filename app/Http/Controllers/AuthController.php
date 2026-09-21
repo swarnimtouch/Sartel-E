@@ -50,14 +50,14 @@ class AuthController extends Controller
             'file' => 'required|file|mimes:xlsx,xls,csv,txt',
         ]);
 
-        $import = new DoctorImport(app(\App\Services\DoctorBannerService::class));
+        $import = new DoctorImport;
 
         Excel::import($import, $request->file('file'));
 
         $updated = $import->getUpdatedCount();
         $skipped = $import->getSkippedCount();
 
-        return back()->with('success', "Import Complete: {$updated} updated, {$skipped} skipped. No new doctors were inserted.");
+        return back()->with('success', "Import Complete: {$updated} updated, {$skipped} skipped. No banners were changed and no new doctors were inserted.");
     }
 
     public function employeeImportPage()
