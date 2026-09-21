@@ -30,6 +30,7 @@ class DoctorBannerService
             }
 
             $this->placeText($template, $doctor);
+            $template = $this->preparePrintBanner($template);
 
             ob_start();
             imagepng($template, null, 8);
@@ -146,7 +147,7 @@ Replace the head and face of the doctor in Photo 1 with the head and face of the
                 throw new RuntimeException('Failed to parse AI generated image from OpenAI.');
             }
 
-            // Resample back to standard high-res template dimensions (2550 x 3300)
+            // Work at the source template size, then crop to the final 8.4 x 11 inch print canvas.
             $finalBanner = imagecreatetruecolor(2550, 3300);
             imagecopyresampled(
                 $finalBanner,
@@ -160,6 +161,7 @@ Replace the head and face of the doctor in Photo 1 with the head and face of the
 
             // Overlay Doctor name and speciality in high resolution with shadow
             $this->placeText($finalBanner, $doctor);
+            $finalBanner = $this->preparePrintBanner($finalBanner);
 
             ob_start();
             imagepng($finalBanner, null, 7);
@@ -258,6 +260,33 @@ Replace the head and face of the doctor in Photo 1 with the head and face of the
         }
 
         return true;
+    }
+
+    private function preparePrintBanner(\GdImage $banner): \GdImage
+    {
+        $targetWidth = 2520;
+        $targetHeight = 3300;
+
+        if (imagesx($banner) !== $targetWidth || imagesy($banner) !== $targetHeight) {
+            $cropX = max(0, (int) floor((imagesx($banner) - $targetWidth) / 2));
+            $cropped = imagecrop($banner, [
+                'x' => $cropX,
+                'y' => 0,
+                'width' => $targetWidth,
+                'height' => $targetHeight,
+            ]);
+
+            if (!$cropped) {
+                throw new RuntimeException('The banner could not be cropped to 8.4 x 11 inches.');
+            }
+
+            imagedestroy($banner);
+            $banner = $cropped;
+        }
+
+        imageresolution($banner, 300, 300);
+
+        return $banner;
     }
 
     private function getResizedTemplateBytes(string $filePath, int $targetWidth = 1024): string
