@@ -17,18 +17,21 @@ class EmployeeLoginController extends Controller
 
     public function login(Request $request)
     {
+        $employeeCode = trim((string) $request->employee_code);
 
-        $employee = Employee::where('employee_code',$request->employee_code)->first();
+        $employee = Employee::where('employee_code', $employeeCode)->first();
 
         if(!$employee){
             return back()->with('error','Invalid Employee Code or Password');
         }
 
         // password = employee_code
+        // 'BE' / 'BE - ...' ya 'TBM' / 'TBM - ...' wale sabhi employees login kar sakte hain
         $designation = strtoupper(trim((string) $employee->designation_name));
+        $isAuthorized = (bool) preg_match('/^(BE|TBM)(\s*[-–—]|\s|$)/i', $designation);
 
-        if($request->password != $employee->employee_code || !in_array($designation, ['BE', 'TBM'], true)){
-            return back()->with('error','Invalid Employee Code or Password');
+        if ($request->password != $employee->employee_code || !$isAuthorized) {
+            return back()->with('error', 'Invalid Employee Code or Password');
         }
 
         // LOGIN USER
@@ -40,8 +43,16 @@ class EmployeeLoginController extends Controller
 
     public function dashboard()
     {
+        $employee = Auth::guard('employee')->user();
+        $designation = strtoupper(trim((string) ($employee->designation_name ?? '')));
+        $isAuthorized = (bool) preg_match('/^(BE|TBM)(\s*[-–—]|\s|$)/i', $designation);
 
-        $employee_id = Auth::guard('employee')->user()->id;
+        if (!$isAuthorized) {
+            Auth::guard('employee')->logout();
+            return redirect()->route('login')->with('error', 'Invalid Employee Code or Password');
+        }
+
+        $employee_id = $employee->id;
 
         $doctor_count = Doctor::where('employee_id',$employee_id)->whereNotNull('speciality')->count();
 

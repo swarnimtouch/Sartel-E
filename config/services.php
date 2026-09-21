@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+    'openai' => [
+        'api_key' => env('OPENAI_API_KEY'),
+        'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
+        'image_model' => env('OPENAI_IMAGE_MODEL', 'gpt-image-2'),
+        'image_quality' => env('OPENAI_IMAGE_QUALITY', 'low'),
+        'image_size' => env('OPENAI_IMAGE_SIZE', '1024x1328'),
+        'timeout' => env('OPENAI_IMAGE_TIMEOUT', 180),
+    ],
+
 ];

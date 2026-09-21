@@ -32,6 +32,9 @@ Route::post('admin/login', [AuthController::class, 'login'])->name('login.post')
 Route::post('admin/logout', [AuthController::class, 'logout'])->name('admin.logout');
 Route::get('/doctor-import', [AuthController::class, 'importPage']);
 Route::post('/doctor-import', [AuthController::class, 'importDoctors'])->name('doctor.import');
+Route::get('/employee-import', [AuthController::class, 'employeeImportPage'])->name('employee.import.page');
+Route::post('/employee-import', [AuthController::class, 'importEmployees'])->name('employee.import');
+
 // Admin Routes (protected)
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
@@ -41,5 +44,15 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->name('doctors.reset');
     Route::get('/doctors/download-photos', [AdminController::class, 'downloadPhotos'])
         ->name('doctors.download-photos');
+    Route::get('/doctors/download-generated-photos', [AdminController::class, 'downloadGeneratedPhotos'])
+        ->name('doctors.download-generated-photos');
+    Route::post('/doctors/{doctor}/generate-banner', [AdminController::class, 'generateBanner'])
+        ->name('doctors.generate-banner');
+    Route::get('/doctors/{doctor}/download-banner', [AdminController::class, 'downloadBanner'])
+        ->name('doctors.download-banner');
+    Route::get('/employee-import', [AuthController::class, 'employeeImportPage'])
+        ->name('employee.import');
+    Route::post('/employee-import', [AuthController::class, 'importEmployees'])
+        ->name('employee.import.post');
 
 });

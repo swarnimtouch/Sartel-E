@@ -12,6 +12,10 @@ class Employee extends Authenticatable
         'name',
         'employee_code',
         'position_code',
+        'designation_name',
+        'hq_name',
+        'hq_code',
+        'zone',
         'password'
     ];
 

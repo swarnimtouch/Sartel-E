@@ -18,7 +18,13 @@ class Doctor extends Model
         'language',
         'gender',
         'banner_path',
+        'is_generated',
     ];
+
+    protected $casts = [
+        'is_generated' => 'boolean',
+    ];
+
     public function employee()
     {
         return $this->belongsTo(Employee::class);

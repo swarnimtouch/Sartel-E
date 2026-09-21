@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Doctor;
+use App\Services\DoctorBannerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
@@ -46,6 +47,12 @@ class AdminController extends Controller
             $query->where('speciality', $request->speciality);
         }
 
+        if ($request->filled('zone')) {
+            $query->whereHas('employee', function ($emp) use ($request) {
+                $emp->where('zone', $request->zone);
+            });
+        }
+
         $doctors = $query->latest()->paginate(100)->withQueryString();
 
         $specialities = Doctor::whereNotNull('speciality')
@@ -54,7 +61,15 @@ class AdminController extends Controller
             ->filter()
             ->sort();
 
-        return view('admin.doctors.index', compact('doctors','specialities'));
+        $zones = \App\Models\Employee::whereNotNull('zone')
+            ->where('zone', '!=', '')
+            ->distinct()
+            ->pluck('zone')
+            ->filter()
+            ->sort()
+            ->values();
+
+        return view('admin.doctors.index', compact('doctors', 'specialities', 'zones'));
     }
 
     public function resetDoctor(Doctor $doctor)
@@ -100,6 +115,11 @@ class AdminController extends Controller
             ->when($request->search, function ($q) use ($request) {
                 $q->where('doctor_name', 'like', '%' . $request->search . '%')
                     ->orWhere('speciality',   'like', '%' . $request->search . '%');
+            })
+            ->when($request->zone, function ($q) use ($request) {
+                $q->whereHas('employee', function ($emp) use ($request) {
+                    $emp->where('zone', $request->zone);
+                });
             });
 
         $doctors = $query->orderBy('created_at', 'desc')->get();
@@ -125,6 +145,7 @@ class AdminController extends Controller
                 'MSL Code',
                 'Language',
                 'Gender',
+                'Zone',
                 'Employee Name',
                 'Employee Code',
                 'Speciality',
@@ -146,6 +167,7 @@ class AdminController extends Controller
                     $doc->msl_code                ?? '',
                     $doc->language                ?? '',
                     $doc->gender                  ?? '',
+                    $doc->employee->zone          ?? '',
                     $doc->employee->name          ?? '',
                     $doc->employee->employee_code ?? '',
                     $doc->speciality              ?? '',
@@ -197,11 +219,23 @@ class AdminController extends Controller
             $query->where('speciality', $request->speciality);
         }
 
+        if ($request->filled('zone')) {
+            $query->whereHas('employee', function ($emp) use ($request) {
+                $emp->where('zone', $request->zone);
+            });
+        }
+
         if (!(clone $query)->exists()) {
             return back()->with('error', 'Koi photo ya banner available nahi hai.');
         }
 
-        $zipFileName = 'doctors_photos_and_banners_' . now()->format('Ymd_His') . '.zip';
+        if ($request->filled('zone')) {
+            $zoneSlug = preg_replace('/[^a-zA-Z0-9_-]/', '_', strtolower(trim($request->zone)));
+            $zipFileName = 'doctors_photos_and_banners_' . $zoneSlug . '_' . now()->format('Ymd_His') . '.zip';
+        } else {
+            $zipFileName = 'doctors_photos_and_banners_all_zones_' . now()->format('Ymd_His') . '.zip';
+        }
+
         $exportId = (string) \Illuminate\Support\Str::uuid();
         $exportDirectory = storage_path('app/temp/photo-exports/' . $exportId);
         $zipFilePath = $exportDirectory . DIRECTORY_SEPARATOR . $zipFileName;
@@ -224,20 +258,24 @@ class AdminController extends Controller
                 $zip,
                 $stagingDirectory,
                 &$added,
-                &$skipped
+                &$skipped,
+                $request
             ) {
                 foreach ($doctors as $doctor) {
                     $employeeName = $doctor->employee
-                        ? preg_replace('/[^a-zA-Z0-9_-]/', '_', $doctor->employee->name ?? 'unknown')
+                        ? trim(preg_replace('/[^a-zA-Z0-9]+/', '_', $doctor->employee->name ?? 'unknown'), '_')
                         : 'unknown';
-                    $employeeCode = preg_replace(
-                        '/[^a-zA-Z0-9_-]/',
+                    $employeeCode = trim(preg_replace(
+                        '/[^a-zA-Z0-9]+/',
                         '_',
                         $doctor->employee->employee_code ?? 'emp_' . ($doctor->employee_id ?? '0')
-                    );
+                    ), '_');
                     $folderName = $employeeCode . '_' . $employeeName;
                     $doctorSlug = preg_replace('/\s+/', '_', strtolower(trim($doctor->doctor_name ?? 'doctor')));
                     $doctorSlug = preg_replace('/[^a-z0-9_-]/', '', $doctorSlug) ?: 'doctor';
+
+                    $zoneName = $doctor->employee?->zone ? trim($doctor->employee->zone) : 'Unassigned_Zone';
+                    $zoneFolder = preg_replace('/[^a-zA-Z0-9_-]/', '_', $zoneName) ?: 'Unassigned_Zone';
 
                     $assets = [
                         'photos' => $doctor->photo,
@@ -269,7 +307,7 @@ class AdminController extends Controller
                             $extension = preg_match('/^[a-z0-9]{1,10}$/', $extension) ? $extension : 'png';
                             $suffix = $assetFolder === 'banners' ? '_banner' : '_photo';
                             $fileName = $doctorSlug . '_' . $doctor->id . $suffix . '.' . $extension;
-                            $zipPath = $folderName . '/' . $assetFolder . '/' . $fileName;
+                            $zipPath = $zoneFolder . '/' . $folderName . '/' . $fileName;
 
                             if (!$zip->addFile($stagedPath, $zipPath)) {
                                 throw new \RuntimeException('Image ZIP me add nahi ho payi.');
@@ -338,6 +376,240 @@ class AdminController extends Controller
                 'X-Export-Images-Skipped' => (string) $skipped,
             ])
             ->deleteFileAfterSend(true);
+    }
+
+    public function downloadGeneratedPhotos(Request $request)
+    {
+        set_time_limit(0);
+
+        $query = Doctor::with('employee')
+            ->where('is_generated', true)
+            ->whereNotNull('banner_path')
+            ->where('banner_path', '!=', '');
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('doctor_name', 'like', "%$s%")
+                    ->orWhere('speciality', 'like', "%$s%")
+                    ->orWhere('hospital_name', 'like', "%$s%")
+                    ->orWhereHas('employee', function ($emp) use ($s) {
+                        $emp->where('employee_code', 'like', "%$s%");
+                    });
+            });
+        }
+
+        if ($request->filled('speciality')) {
+            $query->where('speciality', $request->speciality);
+        }
+
+        if ($request->filled('zone')) {
+            $query->whereHas('employee', function ($emp) use ($request) {
+                $emp->where('zone', $request->zone);
+            });
+        }
+
+        if (!(clone $query)->exists()) {
+            return back()->with('error', 'Koi generated banner / photo available nahi hai.');
+        }
+
+        if ($request->filled('zone')) {
+            $zoneSlug = preg_replace('/[^a-zA-Z0-9_-]/', '_', strtolower(trim($request->zone)));
+            $zipFileName = 'generated_doctors_banners_' . $zoneSlug . '_' . now()->format('Ymd_His') . '.zip';
+        } else {
+            $zipFileName = 'generated_doctors_banners_all_zones_' . now()->format('Ymd_His') . '.zip';
+        }
+
+        $exportId = (string) \Illuminate\Support\Str::uuid();
+        $exportDirectory = storage_path('app/temp/generated-exports/' . $exportId);
+        $zipFilePath = $exportDirectory . DIRECTORY_SEPARATOR . $zipFileName;
+        $stagingDirectory = $exportDirectory . DIRECTORY_SEPARATOR . 'staging';
+
+        File::ensureDirectoryExists($stagingDirectory);
+
+        $zip = new ZipArchive();
+        if ($zip->open($zipFilePath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+            File::deleteDirectory($exportDirectory);
+            return back()->with('error', 'Zip file create nahi ho payi.');
+        }
+
+        $added = 0;
+        $skipped = 0;
+        $zipIsOpen = true;
+
+        try {
+            $query->orderBy('id')->chunkById(100, function ($doctors) use (
+                $zip,
+                $stagingDirectory,
+                &$added,
+                &$skipped,
+                $request
+            ) {
+                foreach ($doctors as $doctor) {
+                    $employeeName = $doctor->employee
+                        ? trim(preg_replace('/[^a-zA-Z0-9]+/', '_', $doctor->employee->name ?? 'unknown'), '_')
+                        : 'unknown';
+                    $employeeCode = trim(preg_replace(
+                        '/[^a-zA-Z0-9]+/',
+                        '_',
+                        $doctor->employee->employee_code ?? 'emp_' . ($doctor->employee_id ?? '0')
+                    ), '_');
+                    $folderName = $employeeCode . '_' . $employeeName;
+                    $doctorSlug = preg_replace('/\s+/', '_', strtolower(trim($doctor->doctor_name ?? 'doctor')));
+                    $doctorSlug = preg_replace('/[^a-z0-9_-]/', '', $doctorSlug) ?: 'doctor';
+
+                    $zoneName = $doctor->employee?->zone ? trim($doctor->employee->zone) : 'Unassigned_Zone';
+                    $zoneFolder = preg_replace('/[^a-zA-Z0-9_-]/', '_', $zoneName) ?: 'Unassigned_Zone';
+
+                    $s3Path = $doctor->banner_path;
+                    if (!$s3Path) {
+                        continue;
+                    }
+
+                    $source = null;
+                    $destination = null;
+                    $stagedPath = $stagingDirectory . DIRECTORY_SEPARATOR . $doctor->id . '_generated_banner';
+
+                    try {
+                        $source = Storage::disk('s3')->readStream($s3Path);
+                        $destination = fopen($stagedPath, 'wb');
+
+                        if (!is_resource($source) || $destination === false) {
+                            throw new \RuntimeException('S3 stream open nahi ho paya.');
+                        }
+
+                        if (stream_copy_to_stream($source, $destination) === false) {
+                            throw new \RuntimeException('S3 stream copy nahi ho paya.');
+                        }
+
+                        $extension = strtolower(pathinfo($s3Path, PATHINFO_EXTENSION));
+                        $extension = preg_match('/^[a-z0-9]{1,10}$/', $extension) ? $extension : 'png';
+                        $fileName = $doctorSlug . '_' . $doctor->id . '_generated_banner.' . $extension;
+                        $zipPath = $zoneFolder . '/' . $folderName . '/' . $fileName;
+
+                        if (!$zip->addFile($stagedPath, $zipPath)) {
+                            throw new \RuntimeException('Image ZIP me add nahi ho payi.');
+                        }
+
+                        $added++;
+                    } catch (\Throwable $e) {
+                        $skipped++;
+                        File::delete($stagedPath);
+                        Log::warning('Generated banner export skipped.', [
+                            'doctor_id' => $doctor->id,
+                            'path' => $s3Path,
+                            'error' => $e->getMessage(),
+                        ]);
+                    } finally {
+                        if (is_resource($source)) {
+                            fclose($source);
+                        }
+                        if (is_resource($destination)) {
+                            fclose($destination);
+                        }
+                    }
+                }
+            });
+
+            $closed = $zip->close();
+            $zipIsOpen = false;
+
+            if (!$closed) {
+                throw new \RuntimeException('ZIP finalize nahi ho payi.');
+            }
+        } catch (\Throwable $e) {
+            if ($zipIsOpen) {
+                try {
+                    $zip->close();
+                } catch (\Throwable) {
+                }
+            }
+            File::deleteDirectory($exportDirectory);
+            Log::error('Generated banner export failed.', ['error' => $e->getMessage()]);
+
+            return back()->with('error', 'Generated banners ZIP create nahi ho payi. Please dobara try karein.');
+        }
+
+        File::deleteDirectory($stagingDirectory);
+
+        if ($added === 0) {
+            File::deleteDirectory($exportDirectory);
+            return back()->with('error', 'S3 se koi generated banner download nahi ho paya. Logs check karein.');
+        }
+
+        Log::info('Generated banner export completed.', compact('added', 'skipped'));
+
+        app()->terminating(fn () => File::deleteDirectory($exportDirectory));
+
+        return response()
+            ->download($zipFilePath, $zipFileName, [
+                'X-Export-Images-Added' => (string) $added,
+                'X-Export-Images-Skipped' => (string) $skipped,
+            ])
+            ->deleteFileAfterSend(true);
+    }
+
+    public function generateBanner(Doctor $doctor, DoctorBannerService $bannerService)
+    {
+        if (!$doctor->photo) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Doctor photo is missing. Please make sure a photo is uploaded first.',
+            ], 422);
+        }
+
+        if (!$doctor->gender || !in_array($doctor->gender, ['Male', 'Female'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Doctor gender must be set to Male or Female.',
+            ], 422);
+        }
+
+        try {
+            $bannerPath = $bannerService->generateAiBanner($doctor);
+
+            if (!$bannerPath) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'AI banner generation failed. Please check server logs.',
+                ], 500);
+            }
+
+            $s3Url = 'https://swarnimpolling.s3.ap-south-1.amazonaws.com/' . $bannerPath;
+            $downloadUrl = route('admin.doctors.download-banner', $doctor);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'AI Banner generated successfully with face swap!',
+                'banner_path' => $bannerPath,
+                'banner_url' => $s3Url,
+                'download_url' => $downloadUrl,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Admin generateBanner error', [
+                'doctor_id' => $doctor->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'AI generation error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function downloadBanner(Doctor $doctor)
+    {
+        if (!$doctor->banner_path || !Storage::disk('s3')->exists($doctor->banner_path)) {
+            return back()->with('error', 'Banner file not found on S3.');
+        }
+
+        $doctorSlug = str($doctor->doctor_name)->slug('_')->value() ?: 'doctor';
+        $fileName = "{$doctorSlug}_banner.png";
+
+        return Storage::disk('s3')->download($doctor->banner_path, $fileName, [
+            'Content-Type' => 'image/png',
+        ]);
     }
 
 }

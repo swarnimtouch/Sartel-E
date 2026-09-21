@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Imports\DoctorImport;
+use App\Imports\EmployeeImport;
 use Maatwebsite\Excel\Facades\Excel;
 
 class AuthController extends Controller
@@ -55,5 +56,26 @@ class AuthController extends Controller
         return back()->with('success', "Import Complete: {$inserted} inserted, {$updated} updated.");
     }
 
+    public function employeeImportPage()
+    {
+        return view('admin.employees.import');
+    }
+
+    public function importEmployees(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv,txt',
+        ]);
+
+        $import = new EmployeeImport;
+
+        Excel::import($import, $request->file('file'));
+
+        $inserted = $import->getInsertedCount();
+        $updated = $import->getUpdatedCount();
+        $skipped = $import->getSkippedCount();
+
+        return back()->with('success', "Employee Import Complete: {$inserted} inserted, {$updated} updated, {$skipped} skipped.");
+    }
 
 }
