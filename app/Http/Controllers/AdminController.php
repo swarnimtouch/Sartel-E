@@ -605,7 +605,7 @@ class AdminController extends Controller
         }
 
         $doctorSlug = str($doctor->doctor_name)->slug('_')->value() ?: 'doctor';
-        $fileName = "{$doctorSlug}_banner.png";
+        $fileName = $doctor->doctor_name . '.png';
 
         return Storage::disk('s3')->download($doctor->banner_path, $fileName, [
             'Content-Type' => 'image/png',
