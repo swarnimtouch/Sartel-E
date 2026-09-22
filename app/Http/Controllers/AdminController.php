@@ -53,6 +53,10 @@ class AdminController extends Controller
             });
         }
 
+        if ($request->filled('generated') && in_array($request->generated, ['0', '1'], true)) {
+            $query->where('is_generated', $request->generated === '1');
+        }
+
         $doctors = $query
             ->orderByDesc('created_at')
             ->orderByDesc('id')

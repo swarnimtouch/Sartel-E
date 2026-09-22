@@ -453,11 +453,23 @@
                     </div>
                 @endif
 
+                <div class="filter-select-wrap">
+                    <select name="generated" class="filter-select" onchange="this.form.submit()">
+                        <option value="">All Generation Status</option>
+                        <option value="1" {{ request('generated') === '1' ? 'selected' : '' }}>
+                            Generated
+                        </option>
+                        <option value="0" {{ request('generated') === '0' ? 'selected' : '' }}>
+                            Not Generated
+                        </option>
+                    </select>
+                </div>
+
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-filter"></i> <span>Filter</span>
                 </button>
 
-                @if(request()->hasAny(['search', 'city', 'speciality', 'zone']))
+                @if(request()->hasAny(['search', 'city', 'speciality', 'zone', 'generated']))
                     <a href="{{ route('admin.doctors.index') }}" class="btn btn-ghost">
                         <i class="fas fa-times"></i> <span>Reset</span>
                     </a>
