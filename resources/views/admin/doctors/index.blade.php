@@ -472,6 +472,7 @@
                 <tr>
                     <th>#</th>
                     <th>Photo</th>
+                    <th>Action</th>
                     <th>Doctor</th>
                     <th>Doctor Msl Code</th>
                     <th>Language</th>
@@ -484,7 +485,6 @@
                     <th>Hospital</th>
                     <th>Birth Date</th>
                     <th>Updated</th>
-                    <th>Action</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -505,6 +505,43 @@
                                     {{ strtoupper(substr($doc->doctor_name, 0, 1)) }}
                                 </div>
                             @endif
+                        </td>
+                        <td>
+                            <div class="doctor-actions">
+                                @if($doc->is_generated && $doc->banner_path)
+                                    <a href="{{ route('admin.doctors.download-banner', $doc) }}"
+                                       class="btn-banner-generated"
+                                       title="Download generated banner">
+                                        <i class="fas fa-download"></i> Generated
+                                    </a>
+                                    <button type="button"
+                                            class="btn-banner-regenerate btn-generate-trigger"
+                                            data-url="{{ route('admin.doctors.generate-banner', $doc) }}"
+                                            data-name="{{ $doc->doctor_name }}"
+                                            title="Regenerate Banner">
+                                        <i class="fas fa-redo-alt"></i>
+                                    </button>
+                                @else
+                                    <button type="button"
+                                            class="btn-banner-generate btn-generate-trigger"
+                                            data-url="{{ route('admin.doctors.generate-banner', $doc) }}"
+                                            data-name="{{ $doc->doctor_name }}"
+                                            {{ !$doc->photo ? 'disabled' : '' }}
+                                            title="{{ !$doc->photo ? 'Doctor photo required to generate' : 'Generate AI Banner' }}">
+                                        <i class="fas fa-wand-magic-sparkles"></i> Generate
+                                    </button>
+                                @endif
+
+                                <form method="POST" action="{{ route('admin.doctors.reset', $doc) }}"
+                                      class="reset-doctor-form">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn-reset-doctor" title="Delete submitted data"
+                                            aria-label="Delete submitted data for {{ $doc->doctor_name }}">
+                                        <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                         <td>
                             <div class="doctor-name">{{ $doc->doctor_name }}</div>
@@ -552,43 +589,6 @@
                         <td>{{ $doc->hospital_name ?? '-' }}</td>
                         <td>{{ $doc->birth_date ?? '-' }}</td>
                         <td>{{ optional($doc->updated_at)->format('d M Y') ?? '-' }}</td>
-                        <td>
-                            <div class="doctor-actions">
-                                @if($doc->is_generated && $doc->banner_path)
-                                    <a href="{{ route('admin.doctors.download-banner', $doc) }}"
-                                       class="btn-banner-generated"
-                                       title="Download generated banner">
-                                        <i class="fas fa-download"></i> Generated
-                                    </a>
-                                    <button type="button"
-                                            class="btn-banner-regenerate btn-generate-trigger"
-                                            data-url="{{ route('admin.doctors.generate-banner', $doc) }}"
-                                            data-name="{{ $doc->doctor_name }}"
-                                            title="Regenerate Banner">
-                                        <i class="fas fa-redo-alt"></i>
-                                    </button>
-                                @else
-                                    <button type="button"
-                                            class="btn-banner-generate btn-generate-trigger"
-                                            data-url="{{ route('admin.doctors.generate-banner', $doc) }}"
-                                            data-name="{{ $doc->doctor_name }}"
-                                            {{ !$doc->photo ? 'disabled' : '' }}
-                                            title="{{ !$doc->photo ? 'Doctor photo required to generate' : 'Generate AI Banner' }}">
-                                        <i class="fas fa-wand-magic-sparkles"></i> Generate
-                                    </button>
-                                @endif
-
-                                <form method="POST" action="{{ route('admin.doctors.reset', $doc) }}"
-                                      class="reset-doctor-form">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn-reset-doctor" title="Delete submitted data"
-                                            aria-label="Delete submitted data for {{ $doc->doctor_name }}">
-                                        <i class="fas fa-trash-alt" aria-hidden="true"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
                     </tr>
                 @empty
                     <tr>
