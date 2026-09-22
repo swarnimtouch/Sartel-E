@@ -53,7 +53,11 @@ class AdminController extends Controller
             });
         }
 
-        $doctors = $query->latest()->paginate(100)->withQueryString();
+        $doctors = $query
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->paginate(100)
+            ->withQueryString();
 
         $specialities = Doctor::whereNotNull('speciality')
             ->distinct()
